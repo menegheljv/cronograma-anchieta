@@ -59,6 +59,15 @@ h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap
 @media (max-width:860px){
   .dow,.grid{display:none}
   .list{display:block}
+  .wrap{padding:18px 12px 40px}
+  .filters{position:sticky;top:0;z-index:5;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px -12px 14px;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .chip{flex:none;padding:10px 15px;font-size:14px}
+  .day{scroll-margin-top:72px;border-radius:16px;padding:14px}
+  .day h2{font-size:17px}
+  .day .item{font-size:15px;padding:6px 0 6px 10px;margin-top:10px}
+  .item small{font-size:13.5px}
+  .foot{text-align:center}
 }
 </style>
 </head>
@@ -222,6 +231,10 @@ function buildFilters(){
 }
 buildFilters();
 render();
+if (TODAY && window.matchMedia("(max-width:860px)").matches){
+  const t = document.querySelector(".day.today");
+  if (t) t.scrollIntoView({block:"start"});
+}
 </script>
 </body>
 </html>
