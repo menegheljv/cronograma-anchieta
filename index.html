@@ -8,73 +8,96 @@
 <title>Cronograma de Outubro 2026</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&display=swap">
 <style>
 :root{
   color-scheme:light;
-  --bg:#faf7f2; --surface:#fff; --surface-2:#f3efe7; --border:#e6ded0;
-  --ink:#211f1a; --ink-soft:#645d4e; --ink-faint:#a49c8a; --accent:#c23a6b;
-  --joao:#159a56; --renata:#9333ea; --isabela:#ff2d95; --marcos:#1d4ed8;
-  --wandinho:#c0392b; --mariana:#e0680f; --definir:#64748b;
-  --joao-soft:#dcf5e6;
+  --bg:#f3ede0; --surface:#ffffff; --surface-2:#e8dfcc; --border:#b9ad94;
+  --ink:#14120d; --ink-soft:#3d382c;
+  --joao:#0b7a3e; --renata:#7415d1; --isabela:#d6007a; --marcos:#1239b8;
+  --wandinho:#b0281a; --mariana:#c24f00; --definir:#475569;
+  --accent:#c23a6b; --gray:#737373; --past:#8a8a8a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.4}
-.wrap{max-width:1120px;margin:0 auto;padding:28px 16px 64px}
-h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
-.sub{margin:0;color:var(--ink-soft);text-wrap:pretty}
-.filters{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 22px}
-.chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.dot{width:9px;height:9px;border-radius:50%;flex:none}
-.dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
-.dow{margin-bottom:6px}
-.dow span{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);text-align:center}
-.cell{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;min-height:112px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.wrap{width:100%;padding:24px clamp(14px,2.4vw,40px) 56px}
+
+.hero{background:var(--ink);color:#fff;border-radius:28px;padding:clamp(20px,3vw,34px) clamp(20px,3vw,40px)}
+.hero h1{margin:0 0 6px;font-size:clamp(28px,5.2vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
+.hero p{margin:0;color:#e6dfcf;font-size:clamp(14px,1.6vw,17px);text-wrap:pretty}
+.stripe{height:10px;border-radius:999px;margin-top:20px;background:linear-gradient(90deg,var(--joao),var(--renata),var(--isabela),var(--marcos),var(--wandinho),var(--mariana))}
+
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
+.chip{--c:var(--ink);display:inline-flex;align-items:center;gap:9px;padding:10px 18px;border:3px solid var(--c);border-radius:999px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.chip small{font-size:12px;font-weight:700;background:var(--c);color:#fff;border-radius:999px;padding:1px 8px}
+.chip[aria-pressed="true"]{background:var(--c);color:#fff}
+.chip[aria-pressed="true"] small{background:#fff;color:var(--c)}
+
+.dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+.dow{margin-bottom:8px}
+.dow span{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);text-align:center}
+.dow span:first-child,.dow span:last-child{color:var(--accent)}
+
+.cell{background:var(--surface);border:3px solid var(--border);border-radius:22px;padding:12px;min-height:160px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .cell.empty{background:transparent;border-color:transparent}
 .cell.weekend{background:var(--surface-2)}
-.cell.today{outline:2px solid var(--accent);outline-offset:1px}
-.num{font-weight:700;font-size:14px;line-height:1}
-.item{font-size:11.5px;line-height:1.3;padding-left:7px;border-left:3px solid var(--c);color:var(--ink);text-wrap:pretty;overflow-wrap:anywhere}
-.item b{color:var(--c);font-weight:700}
-.item.dim{--c:#737373;background:#737373;color:#fff;border-radius:6px;padding:3px 6px 3px 7px}
-.item.dim b,.item.dim small{color:#fff}
-.cell.dim,.day.dim{background:#737373;border-color:#737373;color:#fff}
-.cell.dim .num,.day.dim h2,.day.dim h2 small{color:#fff}
-.cell.dim .item.dim,.day.dim .item.dim{background:#8a8a8a;border-left-color:#fff}
-.item.past{--c:#9a9a9a;color:#8a8a8a;opacity:.85}
-.item.past b{color:#8a8a8a}
-.cell.past,.day.past{background:var(--surface-2);border-color:var(--border);color:#8a8a8a}
-.cell.past .num,.day.past h2{color:#8a8a8a}
-.item.past::before{content:"✓ ";font-weight:700}
+.num{font-weight:800;font-size:22px;line-height:1}
+.today{outline:4px solid var(--accent);outline-offset:2px}
+.today .num::after{content:" HOJE";font-size:11px;letter-spacing:.08em;color:var(--accent);vertical-align:middle}
+
+.item{font-size:13px;line-height:1.3;padding:8px 10px;border-radius:12px;border-left:7px solid var(--c);background:color-mix(in srgb,var(--c) 22%,#fff);color:var(--ink);font-weight:600;text-wrap:pretty;overflow-wrap:anywhere}
+.item b{font-weight:800}
+.item small{display:block;color:var(--ink-soft);font-size:12.5px;font-weight:500}
+.item.hide{display:none}
+
+.past{background:var(--surface-2);border-color:var(--border);color:var(--past)}
+.past .num{color:var(--past)}
+.past .item{--c:#9a9a9a;background:#dcd3bf;color:var(--past)}
+.past .item::before{content:"✓ ";font-weight:800}
+.past.today .num::after{content:""}
+
+.own{background:var(--o);border-color:var(--o);color:#fff}
+.own .num,.own h2,.own h2 small{color:#fff}
+.own .item{background:rgba(255,255,255,.2);border-left-color:#fff;color:#fff}
+.own .item b{display:none}
+.own .item small{color:#fff}
+.own.today .num::after{color:#fff}
+
+.dim{background:var(--gray);border-color:var(--gray);color:#fff}
+.dim .num,.dim h2,.dim h2 small{color:#fff}
+
 .list{display:none}
-.day{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.day{background:var(--surface);border:3px solid var(--border);border-radius:20px;padding:14px;margin-bottom:12px;scroll-margin-top:76px}
 .day.weekend{background:var(--surface-2)}
-.day.today{outline:2px solid var(--accent);outline-offset:1px}
-.day h2{margin:0 0 8px;font-size:15px}
-.day h2 small{font-weight:400;color:var(--ink-soft);margin-left:6px}
-.day .item{font-size:14px;margin-top:8px}
-.item small{display:block;color:var(--ink-soft);font-size:12.5px}
-.foot{margin-top:28px;color:var(--ink-faint);font-size:12.5px}
+.day h2{margin:0 0 8px;font-size:18px;font-weight:800}
+.day h2 small{font-weight:600;color:var(--ink-soft);margin-left:8px}
+.day .item{font-size:15px;margin-top:8px}
+.day.past h2,.day.past h2 small{color:var(--past)}
+.day.today h2::after{content:" HOJE";font-size:11px;letter-spacing:.08em;color:var(--accent)}
+.day.own.today h2::after{color:#fff}
+.day.past.today h2::after{content:""}
+
+.foot{margin-top:28px;color:var(--ink-soft);font-size:13px}
+
 @media (max-width:860px){
   .dow,.grid{display:none}
   .list{display:block}
-  .wrap{padding:18px 12px 40px}
-  .filters{position:sticky;top:0;z-index:5;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px -12px 14px;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:none}
+  .wrap{padding:14px 12px 40px}
+  .hero{border-radius:22px}
+  .filters{position:sticky;top:0;z-index:5;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px -12px;padding:10px 12px;background:var(--bg);border-bottom:2px solid var(--border);scrollbar-width:none}
   .filters::-webkit-scrollbar{display:none}
   .chip{flex:none;padding:10px 15px;font-size:14px}
-  .day{scroll-margin-top:72px;border-radius:16px;padding:14px}
-  .day h2{font-size:17px}
-  .day .item{font-size:15px;padding:6px 0 6px 10px;margin-top:10px}
-  .item small{font-size:13.5px}
   .foot{text-align:center}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Cronograma de Outubro 2026</h1>
-  <p class="sub">Prefeitura de Anchieta · pautas de conteúdo das redes sociais</p>
+  <header class="hero">
+    <h1>Cronograma de Outubro 2026</h1>
+    <p>Prefeitura de Anchieta · pautas de conteúdo das redes sociais</p>
+    <div class="stripe"></div>
+  </header>
   <div class="filters" id="filters" role="group" aria-label="Filtrar por responsável"></div>
   <div class="dow"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
   <div class="grid" id="grid"></div>
@@ -158,13 +181,11 @@ function h(tag, cls, text){
   return n;
 }
 function itemEl(it, withNote){
-  const past = isPast(it[0]);
   const [, title, owner, note] = it;
-  const n = h("div", "item" + (past ? " past" : ""));
+  const n = h("div", "item");
   n.style.setProperty("--c", `var(${OWNERS[owner]})`);
   n.dataset.owner = owner;
-  const b = h("b", null, owner === "A definir" ? "" : owner + ": ");
-  n.appendChild(b);
+  n.appendChild(h("b", null, owner === "A definir" ? "" : owner + ": "));
   n.appendChild(document.createTextNode(title));
   if (withNote && note){ n.appendChild(h("small", null, note)); }
   return n;
@@ -177,10 +198,9 @@ function render(){
   for (let d=1; d<=DAYS; d++){
     const dow = (d-1+FIRST_DOW)%7;
     const day = ITEMS.filter(it => it[0]===d);
-    const weekend = dow===0 || dow===6;
-    const flags = (weekend?" weekend":"")+(d===TODAY?" today":"")+(isPast(d)?" past":"");
-
+    const flags = ((dow===0||dow===6)?" weekend":"")+(d===TODAY?" today":"")+(isPast(d)?" past":"");
     const owners = day.map(it => it[2]).join("|");
+
     const cell = h("div","cell"+flags);
     cell.dataset.owners = owners;
     cell.appendChild(h("span","num",String(d)));
@@ -199,11 +219,15 @@ function render(){
 }
 function applyFilter(){
   document.querySelectorAll(".item").forEach(n => {
-    n.classList.toggle("dim", !!active && n.dataset.owner !== active);
+    n.classList.toggle("hide", !!active && n.dataset.owner !== active);
   });
   document.querySelectorAll(".cell:not(.empty), .day").forEach(n => {
-    const has = (n.dataset.owners || "").split("|").includes(active);
+    const has = !!active && (n.dataset.owners || "").split("|").includes(active);
+    const past = n.classList.contains("past");
     n.classList.toggle("dim", !!active && !has);
+    n.classList.toggle("own", has && !past);
+    if (has && !past) n.style.setProperty("--o", `var(${OWNERS[active]})`);
+    else n.style.removeProperty("--o");
   });
   document.querySelectorAll("#filters .chip").forEach(c => {
     c.setAttribute("aria-pressed", String((c.dataset.owner||null) === active));
@@ -215,15 +239,13 @@ function buildFilters(){
   all.type = "button";
   all.addEventListener("click", () => { active = null; applyFilter(); });
   box.appendChild(all);
-  const used = [...new Set(ITEMS.map(i => i[2]))];
-  Object.keys(OWNERS).filter(o => used.includes(o)).forEach(o => {
+  Object.keys(OWNERS).filter(o => ITEMS.some(i => i[2]===o)).forEach(o => {
     const c = h("button","chip");
     c.type = "button";
     c.dataset.owner = o;
-    const dot = h("span","dot");
-    dot.style.background = `var(${OWNERS[o]})`;
-    c.appendChild(dot);
+    c.style.setProperty("--c", `var(${OWNERS[o]})`);
     c.appendChild(document.createTextNode(o));
+    c.appendChild(h("small", null, String(ITEMS.filter(i => i[2]===o).length)));
     c.addEventListener("click", () => { active = (active===o ? null : o); applyFilter(); });
     box.appendChild(c);
   });
