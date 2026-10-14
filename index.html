@@ -37,7 +37,10 @@ h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap
 .num{font-weight:700;font-size:14px;line-height:1}
 .item{font-size:11.5px;line-height:1.3;padding-left:7px;border-left:3px solid var(--c);color:var(--ink);text-wrap:pretty;overflow-wrap:anywhere}
 .item b{color:var(--c);font-weight:700}
-.item.hide{display:none}
+.item.dim{--c:#9a9a9a;color:#8a8a8a;opacity:.85}
+.item.dim b{color:#8a8a8a}
+.cell.dim,.day.dim{background:var(--surface-2);border-color:var(--border);color:#8a8a8a}
+.cell.dim .num,.day.dim h2{color:#8a8a8a}
 .item.past{--c:#9a9a9a;color:#8a8a8a;opacity:.85}
 .item.past b{color:#8a8a8a}
 .cell.past,.day.past{background:var(--surface-2);border-color:var(--border);color:#8a8a8a}
@@ -169,12 +172,15 @@ function render(){
     const weekend = dow===0 || dow===6;
     const flags = (weekend?" weekend":"")+(hasJoao?" has-joao":"")+(d===TODAY?" today":"")+(isPast(d)?" past":"");
 
+    const owners = day.map(it => it[2]).join("|");
     const cell = h("div","cell"+flags);
+    cell.dataset.owners = owners;
     cell.appendChild(h("span","num",String(d)));
     day.forEach(it => cell.appendChild(itemEl(it,false)));
     grid.appendChild(cell);
 
     const card = h("div","day"+flags);
+    card.dataset.owners = owners;
     const hd = h("h2",null,String(d));
     hd.appendChild(h("small",null,DOW[dow]));
     card.appendChild(hd);
@@ -185,7 +191,11 @@ function render(){
 }
 function applyFilter(){
   document.querySelectorAll(".item").forEach(n => {
-    n.classList.toggle("hide", !!active && n.dataset.owner !== active);
+    n.classList.toggle("dim", !!active && n.dataset.owner !== active);
+  });
+  document.querySelectorAll(".cell:not(.empty), .day").forEach(n => {
+    const has = (n.dataset.owners || "").split("|").includes(active);
+    n.classList.toggle("dim", !!active && !has);
   });
   document.querySelectorAll("#filters .chip").forEach(c => {
     c.setAttribute("aria-pressed", String((c.dataset.owner||null) === active));
