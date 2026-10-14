@@ -12,8 +12,8 @@
 <style>
 :root{
   color-scheme:light;
-  --bg:#f3ede0; --surface:#ffffff; --surface-2:#e8dfcc; --border:#b9ad94;
-  --ink:#14120d; --ink-soft:#3d382c;
+  --bg:#ffffff; --surface:#ffffff; --surface-2:#f6f5f2; --border:#e3e0d8;
+  --ink:#1a1814; --ink-soft:#5a5446;
   --joao:#0b7a3e; --renata:#7415d1; --isabela:#d6007a; --marcos:#1239b8;
   --wandinho:#b0281a; --mariana:#c24f00; --definir:#475569;
   --accent:#c23a6b; --gray:#737373; --past:#8a8a8a;
@@ -22,38 +22,37 @@
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.4}
 .wrap{width:100%;padding:24px clamp(14px,2.4vw,40px) 56px}
 
-.hero{background:var(--ink);color:#fff;border-radius:28px;padding:clamp(20px,3vw,34px) clamp(20px,3vw,40px)}
-.hero h1{margin:0 0 6px;font-size:clamp(28px,5.2vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
-.hero p{margin:0;color:#e6dfcf;font-size:clamp(14px,1.6vw,17px);text-wrap:pretty}
-.stripe{height:10px;border-radius:999px;margin-top:20px;background:linear-gradient(90deg,var(--joao),var(--renata),var(--isabela),var(--marcos),var(--wandinho),var(--mariana))}
+.hero{padding:4px 0 0}
+.hero h1{margin:0 0 4px;font-size:clamp(26px,4.4vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.1;text-wrap:balance}
+.hero p{margin:0;color:var(--ink-soft);font-size:clamp(14px,1.5vw,16px);text-wrap:pretty}
 
 .filters{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
-.chip{--c:var(--ink);display:inline-flex;align-items:center;gap:9px;padding:10px 18px;border:3px solid var(--c);border-radius:999px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
-.chip small{font-size:12px;font-weight:700;background:var(--c);color:#fff;border-radius:999px;padding:1px 8px}
+.chip{--c:var(--ink);display:inline-flex;align-items:center;gap:9px;padding:8px 16px;border:1.5px solid var(--c);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.chip small{font-size:12px;font-weight:600;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);border-radius:999px;padding:1px 8px}
 .chip[aria-pressed="true"]{background:var(--c);color:#fff}
-.chip[aria-pressed="true"] small{background:#fff;color:var(--c)}
+.chip[aria-pressed="true"] small{background:rgba(255,255,255,.25);color:#fff}
 
 .dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
 .dow{margin-bottom:8px}
-.dow span{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink);text-align:center}
-.dow span:first-child,.dow span:last-child{color:var(--accent)}
+.dow span{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);text-align:center}
 
-.cell{background:var(--surface);border:3px solid var(--border);border-radius:22px;padding:12px;min-height:160px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.cell{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:10px;min-height:140px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .cell.empty{background:transparent;border-color:transparent}
 .cell.weekend{background:var(--surface-2)}
-.num{font-weight:800;font-size:22px;line-height:1}
-.today{outline:4px solid var(--accent);outline-offset:2px}
+.num{font-weight:700;font-size:17px;line-height:1}
+.today{outline:2px solid var(--accent);outline-offset:1px}
 .today .num::after{content:" HOJE";font-size:11px;letter-spacing:.08em;color:var(--accent);vertical-align:middle}
 
-.item{font-size:13px;line-height:1.3;padding:8px 10px;border-radius:12px;border-left:7px solid var(--c);background:color-mix(in srgb,var(--c) 22%,#fff);color:var(--ink);font-weight:600;text-wrap:pretty;overflow-wrap:anywhere}
-.item b{font-weight:800}
+.item{font-size:13px;line-height:1.3;padding:6px 9px;border-radius:9px;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 9%,#fff);color:var(--ink);font-weight:500;text-wrap:pretty;overflow-wrap:anywhere}
+.item b{font-weight:700;color:var(--c)}
 .item small{display:block;color:var(--ink-soft);font-size:12.5px;font-weight:500}
 .item.hide{display:none}
 
 .past{background:var(--surface-2);border-color:var(--border);color:var(--past)}
 .past .num{color:var(--past)}
-.past .item{--c:#9a9a9a;background:#dcd3bf;color:var(--past)}
-.past .item::before{content:"✓ ";font-weight:800}
+.past .item{--c:#9a9a9a;background:#efefef;color:var(--past)}
+.past .item::before{content:"✓ ";font-weight:700}
+.past .item b{color:var(--past)}
 .past.today .num::after{content:""}
 
 .own{background:var(--o);border-color:var(--o);color:#fff}
@@ -65,9 +64,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 
 
 .list{display:none}
-.day{background:var(--surface);border:3px solid var(--border);border-radius:20px;padding:14px;margin-bottom:12px;scroll-margin-top:76px}
+.day{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:12px;scroll-margin-top:76px}
 .day.weekend{background:var(--surface-2)}
-.day h2{margin:0 0 8px;font-size:18px;font-weight:800}
+.day h2{margin:0 0 8px;font-size:17px;font-weight:700}
 .day h2 small{font-weight:600;color:var(--ink-soft);margin-left:8px}
 .day .item{font-size:15px;margin-top:8px}
 .day.past h2,.day.past h2 small{color:var(--past)}
@@ -81,8 +80,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
   .dow,.grid{display:none}
   .list{display:block}
   .wrap{padding:14px 12px 40px}
-  .hero{border-radius:22px}
-  .filters{position:sticky;top:0;z-index:5;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px -12px;padding:10px 12px;background:var(--bg);border-bottom:2px solid var(--border);scrollbar-width:none}
+    .filters{position:sticky;top:0;z-index:5;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:14px -12px;padding:10px 12px;background:var(--bg);border-bottom:1px solid var(--border);scrollbar-width:none}
   .filters::-webkit-scrollbar{display:none}
   .chip{flex:none;padding:10px 15px;font-size:14px}
   .foot{text-align:center}
@@ -94,7 +92,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
   <header class="hero">
     <h1>Cronograma de Outubro 2026</h1>
     <p>Prefeitura de Anchieta · pautas de conteúdo das redes sociais</p>
-    <div class="stripe"></div>
   </header>
   <div class="filters" id="filters" role="group" aria-label="Filtrar por responsável"></div>
   <div class="dow"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
@@ -149,14 +146,14 @@ const ITEMS = [
 [18,"Dia do Médico","Renata","Card stories"],
 [18,"28º Festival Capixaba de Frutos do Mar","João","Encerramento"],
 [19,"Dia Internacional de Combate ao Câncer de Mama","Mariana","Verificar com a Saúde"],
-[20,"Dia Mundial de Combate ao Bullying","A definir","Produzir post carrossel"],
-[21,"Dia Nacional da Alimentação na Escola","A definir","Produzir card feed"],
-[22,"Aulas de música nas escolas de Anchieta","A definir","Produzir vídeo"],
+[20,"Dia Mundial de Combate ao Bullying","Marcos","Produzir post carrossel"],
+[21,"Dia Nacional da Alimentação na Escola","João","Produzir card feed"],
+[22,"Aulas de música nas escolas de Anchieta","João","Produzir vídeo"],
 [23,"A Semana em 1 min","João","Produzir vídeo"],
 [24,"Foto/Vídeo Turismo","João",""],
 [25,"Dia do Dentista","Renata","Card stories"],
 [26,"Dia do Trabalhador da Construção Civil","A definir","Produzir vídeo"],
-[27,"Você conhece um local que precisa de um PEV?","A definir","Produzir card feed"],
+[27,"Você conhece um local que precisa de um PEV?","Isabela","Produzir card feed"],
 [28,"Dia do Servidor Público","A definir","Produzir card feed"],
 [29,"TBT do mês de outubro","Isabela","Produzir"],
 [30,"A Semana em 1 min","João","Produzir vídeo"],
