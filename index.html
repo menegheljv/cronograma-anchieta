@@ -63,8 +63,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 .own .item small{color:#fff}
 .own.today .num::after{color:#fff}
 
-.dim{background:var(--gray);border-color:var(--gray);color:#fff}
-.dim .num,.dim h2,.dim h2 small{color:#fff}
 
 .list{display:none}
 .day{background:var(--surface);border:3px solid var(--border);border-radius:20px;padding:14px;margin-bottom:12px;scroll-margin-top:76px}
@@ -224,7 +222,6 @@ function applyFilter(){
   document.querySelectorAll(".cell:not(.empty), .day").forEach(n => {
     const has = !!active && (n.dataset.owners || "").split("|").includes(active);
     const past = n.classList.contains("past");
-    n.classList.toggle("dim", !!active && !has);
     n.classList.toggle("own", has && !past);
     if (has && !past) n.style.setProperty("--o", `var(${OWNERS[active]})`);
     else n.style.removeProperty("--o");
