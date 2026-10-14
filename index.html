@@ -11,7 +11,7 @@
 :root{
   --bg:#f1ebdd; --surface:#fff; --surface-2:#e4dac6; --border:#8a7f68;
   --ink:#0d0c09; --ink-soft:#3d382c; --ink-faint:#5c5545; --accent:#c23a6b;
-  --joao:#0b7a3e; --renata:#7415d1; --izabela:#d6007a; --marcos:#1239b8;
+  --joao:#0b7a3e; --renata:#7415d1; --isabela:#d6007a; --marcos:#1239b8;
   --wandinho:#b0281a; --mariana:#c24f00; --definir:#475569;
   --joao-soft:#bdeacb;
 }
@@ -19,7 +19,7 @@
   :root:not([data-theme="light"]){
     --bg:#171512; --surface:#211e1a; --surface-2:#2a261f; --border:#3a352b;
     --ink:#f2ede2; --ink-soft:#b8ae9a; --ink-faint:#7d745f; --accent:#ef83ac;
-    --joao:#4ade80; --renata:#c084fc; --izabela:#ff5eb8; --marcos:#7fa4ff;
+    --joao:#4ade80; --renata:#c084fc; --isabela:#ff5eb8; --marcos:#7fa4ff;
     --wandinho:#f47066; --mariana:#f0975a; --definir:#98a2b3;
     --joao-soft:#173822;
   }
@@ -27,7 +27,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.4}
 .wrap{max-width:none;width:100%;margin:0;padding:28px clamp(16px,2.5vw,40px) 56px}
-.bar{height:8px;border-radius:999px;margin:14px 0 0;background:linear-gradient(90deg,var(--joao),var(--renata),var(--izabela),var(--marcos),var(--wandinho),var(--mariana))}
+.bar{height:8px;border-radius:999px;margin:14px 0 0;background:linear-gradient(90deg,var(--joao),var(--renata),var(--isabela),var(--marcos),var(--wandinho),var(--mariana))}
 h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap:balance}
 .sub{margin:0;color:var(--ink-soft);text-wrap:pretty}
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 22px}
@@ -48,6 +48,11 @@ h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap
 .item{font-size:12.5px;line-height:1.3;padding:7px 10px;border-radius:12px;border:2px solid var(--c);background:color-mix(in srgb,var(--c) 26%,var(--surface));color:var(--ink);font-weight:600;text-wrap:pretty;overflow-wrap:anywhere}
 .item b{color:var(--ink);font-weight:800;text-decoration:underline;text-decoration-color:var(--c);text-decoration-thickness:3px;text-underline-offset:2px}
 .item.hide{display:none}
+.item.past{--c:#9a9a9a;color:#8a8a8a;opacity:.85}
+.item.past b{color:#8a8a8a}
+.cell.past,.day.past{background:var(--surface-2);border-color:var(--border);color:#8a8a8a}
+.cell.past .num,.day.past h2{color:#8a8a8a}
+.item.past::before{content:"¹3 ";font-weight:700}
 .list{display:none}
 .day{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:14px 16px;margin-bottom:12px}
 .day.weekend{background:var(--surface-2)}
@@ -77,13 +82,13 @@ h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap
 </div>
 <script>
 const OWNERS = {
-  "João":"--joao","Renata":"--renata","Izabela":"--izabela","Marcos":"--marcos",
+  "João":"--joao","Renata":"--renata","Isabela":"--isabela","Marcos":"--marcos",
   "Wandinho":"--wandinho","Mariana":"--mariana","A definir":"--definir"
 };
 // [dia, pauta, responsável, observação]
 const ITEMS = [
 [1,"Início do Outubro Rosa e Novembro Azul: Câncer de Mama","A definir","Mudar a identidade visual das redes sociais"],
-[1,"TBT do mês de setembro","Izabela","Produzir"],
+[1,"TBT do mês de setembro","Isabela","Produzir"],
 [1,"Dia Internacional das Pessoas Idosas / Dia Nacional do Idoso","A definir","Post carrossel mostrando as atividades oferecidas aos idosos"],
 [1,"Dia Internacional do Café","A definir","Meme para feed"],
 [2,"Outubro Rosa e Novembro Azul","A definir","Card feed / mudar identidade visual das redes sociais"],
@@ -131,7 +136,7 @@ const ITEMS = [
 [26,"Dia do Trabalhador da Construção Civil","A definir","Produzir vídeo"],
 [27,"Você conhece um local que precisa de um PEV?","A definir","Produzir card feed"],
 [28,"Dia do Servidor Público","A definir","Produzir card feed"],
-[29,"TBT do mês de outubro","Izabela","Produzir"],
+[29,"TBT do mês de outubro","Isabela","Produzir"],
 [30,"A Semana em 1 min","João","Produzir vídeo"],
 [31,"Foto/Vídeo Turismo","João",""]
 ];
@@ -141,6 +146,8 @@ const DAYS = 31;
 const DOW = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 const now = new Date();
 const TODAY = (now.getFullYear()===2026 && now.getMonth()===9) ? now.getDate() : 0;
+const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const isPast = d => new Date(2026, 9, d) < startOfToday;
 let active = null;
 
 function h(tag, cls, text){
@@ -150,8 +157,9 @@ function h(tag, cls, text){
   return n;
 }
 function itemEl(it, withNote){
+  const past = isPast(it[0]);
   const [, title, owner, note] = it;
-  const n = h("div", "item");
+  const n = h("div", "item" + (past ? " past" : ""));
   n.style.setProperty("--c", `var(${OWNERS[owner]})`);
   n.dataset.owner = owner;
   const b = h("b", null, owner === "A definir" ? "" : owner + ": ");
@@ -170,7 +178,7 @@ function render(){
     const day = ITEMS.filter(it => it[0]===d);
     const hasJoao = day.some(it => it[2]==="João");
     const weekend = dow===0 || dow===6;
-    const flags = (weekend?" weekend":"")+(hasJoao?" has-joao":"")+(d===TODAY?" today":"");
+    const flags = (weekend?" weekend":"")+(hasJoao?" has-joao":"")+(d===TODAY?" today":"")+(isPast(d)?" past":"");
 
     const cell = h("div","cell"+flags);
     cell.appendChild(h("span","num",String(d)));
