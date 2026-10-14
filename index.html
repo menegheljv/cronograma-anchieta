@@ -37,10 +37,11 @@ h1{font-size:clamp(26px,5vw,36px);margin:0 0 4px;letter-spacing:-.01em;text-wrap
 .num{font-weight:700;font-size:14px;line-height:1}
 .item{font-size:11.5px;line-height:1.3;padding-left:7px;border-left:3px solid var(--c);color:var(--ink);text-wrap:pretty;overflow-wrap:anywhere}
 .item b{color:var(--c);font-weight:700}
-.item.dim{--c:#9a9a9a;color:#8a8a8a;opacity:.85}
-.item.dim b{color:#8a8a8a}
-.cell.dim,.day.dim{background:var(--surface-2);border-color:var(--border);color:#8a8a8a}
-.cell.dim .num,.day.dim h2{color:#8a8a8a}
+.item.dim{--c:#737373;background:#737373;color:#fff;border-radius:6px;padding:3px 6px 3px 7px}
+.item.dim b,.item.dim small{color:#fff}
+.cell.dim,.day.dim{background:#737373;border-color:#737373;color:#fff}
+.cell.dim .num,.day.dim h2,.day.dim h2 small{color:#fff}
+.cell.dim .item.dim,.day.dim .item.dim{background:#8a8a8a;border-left-color:#fff}
 .item.past{--c:#9a9a9a;color:#8a8a8a;opacity:.85}
 .item.past b{color:#8a8a8a}
 .cell.past,.day.past{background:var(--surface-2);border-color:var(--border);color:#8a8a8a}
