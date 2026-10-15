@@ -462,6 +462,7 @@ const OUT_2026 = [
 [15,"Dia Internacional da Mulher Rural","Renata","Card stories"],
 [15,"28º Festival Capixaba de Frutos do Mar","A definir",""],
 [16,"A Semana em 1 min","João","Produzir vídeo"],
+[16,"Vacinação antirrábica","João","Meme em formato de vídeo"],
 [16,"28º Festival Capixaba de Frutos do Mar","João","2º fim de semana do festival"],
 [17,"Dia da Agricultura","A definir","Serviços oferecidos aos agricultores de Anchieta"],
 [17,"Dia Nacional da Vacinação","Mariana","Verificar com a Saúde"],
@@ -779,6 +780,7 @@ function gerarLegenda(titulo, formato, info){
 
   // ----- rotinas do cronograma -----
   if (formato === "Cobertura") return "Cobertura: " + t.replace(/^cobertura( de| do| da)? /i, "") + " 📸\nAcompanhe os melhores momentos e fique por dentro de tudo o que aconteceu. A Prefeitura de Anchieta esteve presente! 💚" + fecha(tag);
+  if (tem(/antirrabica/)) return "Vacina antirrábica: cachorro e gato vacinados, família protegida! 🐶🐱💉\nA vacina é gratuita e protege seu pet e você contra a raiva, doença grave e fatal. Leve seu animal ao ponto de vacinação e mantenha a carteirinha em dia." + fecha('#VacinaAntirrabica', '#RaivaTemPrevencao');
   if (tem(/corpus christi/)) return "Corpus Christi ✝️\nData de fé e tradição para muitas famílias. É ponto facultativo: confira o funcionamento dos serviços municipais nos canais oficiais da Prefeitura de Anchieta." + fecha("#CorpusChristi");
   if (tem(/^sao joao/)) return "É tempo de São João! 🔥🎶\nQuadrilha, fogueira, comidas típicas e muita animação. Aproveite as festas juninas com segurança e alegria! 🌽" + fecha("#FestaJunina");
   if (tem(/copa do mundo/)) return t + "! ⚽💚\nO Brasil recebe a Copa do Mundo Feminina e Anchieta vai torcer junto. Vista a camisa e acompanhe com a gente! 🇧🇷" + fecha("#CopaDoMundoFeminina");
