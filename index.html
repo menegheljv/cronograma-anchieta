@@ -106,6 +106,25 @@ section[hidden]{display:none}
 .day.own .add{color:var(--on,#fff)}
 dialog{border:0;border-radius:18px;padding:0;width:min(440px,calc(100% - 28px));box-shadow:0 20px 60px rgba(0,0,0,.25);color:var(--ink);font-family:inherit}
 dialog::backdrop{background:rgba(26,24,20,.5)}
+.diabox{padding:22px;display:flex;flex-direction:column;gap:14px}
+#dlgDia{width:min(540px,calc(100% - 28px))}
+#diaItens{max-height:50vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.pauta{display:grid;gap:8px;padding:12px 14px;border:1.5px solid var(--border);border-left:5px solid var(--c);border-radius:12px}
+.pauta.feito{opacity:.65}
+.pautatop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pauta .resp{font-weight:700;color:var(--ct,var(--c))}
+.pauta .acoesp{display:flex;gap:8px}
+.pauta .acoesp .btn{padding:5px 12px;font-size:13px}
+.pauta .linha{display:grid;grid-template-columns:128px 1fr;gap:8px;font-size:14.5px;align-items:baseline}
+.pauta .k{font-weight:700;color:var(--ink-soft);font-size:13px}
+.pauta .v{overflow-wrap:anywhere}
+.pauta .v a{color:var(--marcos)}
+.pauta .v.nada{color:var(--ink-soft)}
+.fm{opacity:.75;font-weight:500}
+#diaItens .vazio,#diaSug .vazio{margin:0}
+.diasug{padding:10px 12px;border:1.5px dashed var(--border);border-radius:12px;font-size:14px}
+.diasug b{display:block;font-size:13px;margin-bottom:4px}
+.diasug a{color:var(--marcos);overflow-wrap:anywhere}
 dialog form{padding:22px;display:flex;flex-direction:column;gap:14px}
 dialog h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
 dialog p{margin:0;color:var(--ink-soft);font-size:14px}
@@ -223,6 +242,8 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
     </fieldset>
     <div><label class="lbl" for="sugLink">Link de referência</label>
       <input id="sugLink" type="url" inputmode="url" placeholder="https://..." required autocomplete="off" autocapitalize="off"></div>
+    <div><label class="lbl" for="sugInfo">Informações (opcional)</label>
+      <input id="sugInfo" type="text" maxlength="300" placeholder="Ex.: onde gravar, quem entrevistar" autocomplete="off"></div>
     <div class="msg" id="sugMsg" role="status"></div>
     <div class="acoes">
       <button class="btn" type="button" id="sugCancel">Cancelar</button>
@@ -230,15 +251,30 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
     </div>
   </form>
 </dialog>
+<dialog id="dlgDia">
+  <div class="diabox">
+    <div><h2 id="diaTit"></h2><p id="diaSub"></p></div>
+    <div id="diaItens"></div>
+    <div id="diaSug"></div>
+    <div class="acoes">
+      <button class="btn" type="button" id="diaFechar">Fechar</button>
+      <button class="btn" type="button" id="diaNovo">+ Nova pauta</button>
+      <button class="btn pri" type="button" id="diaSugerir">Sugestão</button>
+    </div>
+  </div>
+</dialog>
 <dialog id="dlgEd">
   <form id="edForm" method="dialog">
     <div><h2 id="edTitulo">Editar pauta</h2><p>Só o administrador altera o cronograma.</p></div>
     <div><label class="lbl" for="edTit">Título</label>
       <input id="edTit" type="text" maxlength="160" required autocomplete="off"></div>
     <div><label class="lbl" for="edOwner">Responsável</label><select id="edOwner"></select></div>
+    <div><label class="lbl" for="edFmt">Formato</label><select id="edFmt"></select></div>
+    <div><label class="lbl" for="edLink">Link de referência</label>
+      <input id="edLink" type="url" inputmode="url" placeholder="https://..." autocomplete="off" autocapitalize="off"></div>
     <div><label class="lbl" for="edData">Dia</label>
       <input id="edData" type="date" min="2026-10-01" max="2027-12-31" required></div>
-    <div><label class="lbl" for="edObs">Observação</label>
+    <div><label class="lbl" for="edObs">Informações</label>
       <input id="edObs" type="text" maxlength="300" autocomplete="off"></div>
     <div class="msg" id="edMsg" role="status"></div>
     <div class="acoes">
@@ -439,6 +475,17 @@ const TIPOS = {"Vídeo":"--joao","Carrossel":"--renata","Card":"--isabela","Stor
 let SUGS = [], EXTRAS = [], ALT = {}, sugTipo = null, sugDia = null;
 const ESTADO_LOCAL = "cronoEstado";
 const linkOk = u => { try { const x = new URL(u); return x.protocol==="http:" || x.protocol==="https:"; } catch(e){ return false; } };
+const FORMATOS = ["Vídeo","Carrossel","Card","Stories","Foto"];
+const corFormato = f => TIPOS[f] || "--definir";
+function inferirFormato(t, o){
+  const x = (t + " " + o).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/stories/.test(x)) return "Stories";
+  if (/carrossel/.test(x)) return "Carrossel";
+  if (/video/.test(x)) return "Vídeo";
+  if (/foto/.test(x)) return "Foto";
+  if (/card|meme/.test(x)) return "Card";
+  return "";
+}
 const dataOk = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 function lerEstadoLocal(){ try { return JSON.parse(localStorage.getItem(ESTADO_LOCAL) || "{}"); } catch(e){ return {}; } }
@@ -449,7 +496,7 @@ function apiLocal(c){
   const e = lerEstadoLocal();
   e.sugestoes = e.sugestoes || []; e.extras = e.extras || []; e.alteracoes = e.alteracoes || [];
   if (c.acao === "sugerir"){
-    e.sugestoes.push({id:uid(), data:c.data, tipo:c.tipo, titulo:c.titulo, link:c.link, criadoEm:new Date().toISOString(), status:"pendente"});
+    e.sugestoes.push({id:uid(), data:c.data, tipo:c.tipo, titulo:c.titulo, link:c.link, info:c.info||"", criadoEm:new Date().toISOString(), status:"pendente"});
   } else if (c.acao === "marcar"){
     const hs = cyrb53(c.senha || "");
     const okAdm = ADMIN && hs === ADMIN_HASH;
@@ -464,13 +511,13 @@ function apiLocal(c){
       const s = e.sugestoes.find(x => x.id === c.id); if (s) s.status = "rejeitada";
     } else if (c.acao === "aprovar"){
       const s = e.sugestoes.find(x => x.id === c.id); if (s) s.status = "aprovada";
-      e.extras.push({id:"x:"+uid(), data:c.data, titulo:c.titulo, responsavel:c.responsavel, obs:c.obs||"", sugestaoId:c.id});
+      e.extras.push({id:"x:"+uid(), data:c.data, titulo:c.titulo, responsavel:c.responsavel, obs:c.obs||"", formato:c.formato||"", link:c.link||"", sugestaoId:c.id});
     } else if (c.acao === "criar"){
-      e.extras.push({id:"x:"+uid(), data:c.data, titulo:c.titulo, responsavel:c.responsavel, obs:c.obs||""});
+      e.extras.push({id:"x:"+uid(), data:c.data, titulo:c.titulo, responsavel:c.responsavel, obs:c.obs||"", formato:c.formato||"", link:c.link||""});
     } else if (c.acao === "alterar"){
       let a = e.alteracoes.find(x => x.chave === c.chave);
       if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
-      ["data","responsavel","titulo","obs","removida"].forEach(k => { if (c[k] !== undefined) a[k] = c[k]; });
+      ["data","responsavel","titulo","obs","formato","link","removida"].forEach(k => { if (c[k] !== undefined) a[k] = c[k]; });
     } else throw new Error("acao");
   }
   gravarEstadoLocal(e);
@@ -504,21 +551,23 @@ function todosItens(){
   const out = [];
   Object.keys(DATA).forEach(key => DATA[key].forEach(([d,t,o,obs]) => {
     const dt = key + "-" + pad2(d);
-    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false});
+    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false, formato:inferirFormato(t, obs||""), link:""});
   }));
-  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false}));
+  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false, formato:x.formato || "", link:linkOk(x.link) ? x.link : ""}));
   return out.map(x => {
     const a = ALT[x.id]; if (!a) return x;
     const rem = a.removida === true || a.removida === "TRUE" || a.removida === 1;
     return {id:x.id, data:dataOk(a.data) ? a.data : x.data, titulo:a.titulo || x.titulo,
       owner:OWNERS[a.responsavel] ? a.responsavel : x.owner, obs:a.obs ? a.obs : x.obs, removida:rem,
-      feito:a.feito === true || a.feito === "TRUE" || a.feito === 1};
+      feito:a.feito === true || a.feito === "TRUE" || a.feito === 1,
+      formato:a.formato ? String(a.formato).trim() : x.formato,
+      link:a.link ? (linkOk(String(a.link).trim()) ? String(a.link).trim() : "") : x.link};
   }).filter(x => !x.removida);
 }
 function itensDoMes(y, m){
   const key = y + "-" + pad2(m+1);
   const base = todosItens().filter(x => x.data.startsWith(key));
-  const lista = base.map(x => [+x.data.slice(8), x.titulo, x.owner, String(x.obs).trim(), x.id, false, !!x.feito]);
+  const lista = base.map(x => [+x.data.slice(8), x.titulo, x.owner, String(x.obs).trim(), x.id, false, !!x.feito, x.formato || "", x.link || ""]);
   const dias = new Set(lista.map(x => x[0]));
   const dm = new Date(y, m+1, 0).getDate();
   // regra: fim de semana sem pauta vira Vídeo Turismo (Wandinho)
@@ -526,7 +575,7 @@ function itensDoMes(y, m){
     const w = new Date(y, m, d).getDay();
     const id = "w:" + key + "-" + pad2(d);
     const a = ALT[id], rem = a && (a.removida === true || a.removida === "TRUE" || a.removida === 1);
-    if ((w===0 || w===6) && !dias.has(d) && !rem) lista.push([d, "Vídeo Turismo", "Wandinho", "Padrão de fim de semana sem pauta", id, true, !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1))]);
+    if ((w===0 || w===6) && !dias.has(d) && !rem) lista.push([d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1)), "Vídeo", ""]);
   }
   return {lista, reais: base.length};
 }
@@ -548,13 +597,14 @@ function itemEl(it, withNote){
   } else if (it[6]) n.appendChild(h("span","chk ok","✓"));
   n.appendChild(h("b", null, owner === "A definir" ? "" : owner + ": "));
   n.appendChild(document.createTextNode(title));
+  if (it[7]) n.appendChild(h("span","fm"," · " + it[7]));
   if (withNote && note){ n.appendChild(h("small", null, note)); }
   if (ADMIN){
     n.classList.add("adm");
     n.draggable = true;
     n.title = "Clique para editar ou arraste para outro dia";
     n.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", it[4]); e.dataTransfer.effectAllowed = "move"; });
-    n.addEventListener("click", e => { e.stopPropagation(); abrirEd("editar", {it, titulo:title, owner, data:isoDia(it[0]), obs:note}); });
+    n.addEventListener("click", e => { e.stopPropagation(); abrirEd("editar", {it, titulo:title, owner, data:isoDia(it[0]), obs:note, formato:it[7], link:it[8]}); });
   }
   return n;
 }
@@ -562,7 +612,77 @@ async function alternarFeito(it){
   try { await post({acao:"marcar", chave:it[4], feito:!it[6], responsavel:it[2]}); await carregarEstado(); }
   catch(err){ alert(msgErro(err)); }
 }
-function aoClicarDia(d){ if (ADMIN) abrirEd("criar", {data:isoDia(d)}); else openDlg(d); }
+let diaAberto = 0;
+function abrirDia(d){
+  diaAberto = d;
+  renderDia();
+  const dlg = document.getElementById("dlgDia");
+  if (!dlg.open){ if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open",""); }
+}
+function linhaPauta(rot, valor, ehLink){
+  const l = h("div","linha");
+  l.appendChild(h("span","k",rot));
+  const v = h("span","v");
+  if (valor && ehLink){ const a = h("a",null,valor); a.href = valor; a.target = "_blank"; a.rel = "noopener noreferrer"; v.appendChild(a); }
+  else if (valor){ v.textContent = valor; }
+  else { v.textContent = "—"; v.classList.add("nada"); }
+  l.appendChild(v);
+  return l;
+}
+function pautaEl(it){
+  const [, titulo, owner, info, , , feito, formato, link] = it;
+  const c = h("div","pauta" + (feito ? " feito" : ""));
+  corVars(c, OWNERS[owner]);
+  const top = h("div","pautatop");
+  top.appendChild(h("span","resp", owner === "A definir" ? "Responsável: a definir" : "Responsável: " + owner));
+  const ac = h("div","acoesp");
+  if (ADMIN || (USER && owner === USER)){
+    const ck = h("button","btn", feito ? "✓ Feita (desmarcar)" : "Marcar como feita"); ck.type = "button";
+    ck.addEventListener("click", () => alternarFeito(it));
+    ac.appendChild(ck);
+  } else if (feito) ac.appendChild(h("span","stt aprovada","✓ Feita"));
+  if (ADMIN){
+    const ed = h("button","btn","Editar"); ed.type = "button";
+    ed.addEventListener("click", () => abrirEd("editar", {it, titulo, owner, data:isoDia(it[0]), obs:info, formato, link}));
+    ac.appendChild(ed);
+  }
+  top.appendChild(ac);
+  c.appendChild(top);
+  const fv = h("span","v");
+  if (formato){ const t = h("span","tag",formato); corVars(t, corFormato(formato)); fv.appendChild(t); }
+  else { fv.textContent = "—"; fv.classList.add("nada"); }
+  const lf = h("div","linha"); lf.appendChild(h("span","k","Formato")); lf.appendChild(fv);
+  c.appendChild(lf);
+  c.appendChild(linhaPauta("Título", titulo, false));
+  c.appendChild(linhaPauta("Link de referência", link, true));
+  c.appendChild(linhaPauta("Informações", info, false));
+  return c;
+}
+function renderDia(){
+  const d = diaAberto; if (!d) return;
+  const dt = new Date(CY, CM, d);
+  const tit = dt.toLocaleDateString("pt-BR", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+  document.getElementById("diaTit").textContent = tit.charAt(0).toUpperCase() + tit.slice(1);
+  const itens = ITEMS.filter(it => it[0] === d);
+  document.getElementById("diaSub").textContent = itens.length ? (itens.length + (itens.length > 1 ? " pautas neste dia" : " pauta neste dia")) : "";
+  const box = document.getElementById("diaItens"); box.textContent = "";
+  if (!itens.length) box.appendChild(h("p","vazio","Nenhuma pauta neste dia ainda."));
+  itens.forEach(it => box.appendChild(pautaEl(it)));
+  const sg = document.getElementById("diaSug"); sg.textContent = "";
+  const pend = pendentes().filter(x => x.data === isoDia(d));
+  if (pend.length){
+    const w = h("div","diasug"); w.appendChild(h("b",null,"Sugestões aguardando aprovação"));
+    pend.forEach(x => {
+      const l = h("div"); l.appendChild(document.createTextNode(x.tipo + " · " + (x.titulo || "") + " · "));
+      const a = h("a",null,"link de referência"); a.href = x.link; a.target = "_blank"; a.rel = "noopener noreferrer"; l.appendChild(a);
+      if (x.info) l.appendChild(document.createTextNode(" · " + x.info));
+      w.appendChild(l);
+    });
+    sg.appendChild(w);
+  }
+  document.getElementById("diaNovo").hidden = !ADMIN;
+}
+function aoClicarDia(d){ abrirDia(d); }
 function ativarDrop(el, d){
   el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("alvo"); });
   el.addEventListener("dragleave", () => el.classList.remove("alvo"));
@@ -621,7 +741,7 @@ function render(){
   applyFilter();
 }
 function applyFilter(){
-  document.querySelectorAll(".item").forEach(n => {
+  document.querySelectorAll("#grid .item, #list .item").forEach(n => {
     n.classList.toggle("hide", !!active && n.dataset.owner !== active);
   });
   document.querySelectorAll(".cell:not(.empty), .day").forEach(n => {
@@ -681,6 +801,7 @@ function atualizar(){
   document.getElementById("sugCount").textContent = pendentes().length;
   setMonth(CUR, true);
   renderSug();
+  if (document.getElementById("dlgDia").open) renderDia();
 }
 function buildMonths(){
   const box = document.getElementById("months");
@@ -697,10 +818,15 @@ function buildMonths(){
 const msgErro = err => err && err.message === "senha" ? "A senha de administrador não confere." : "Não consegui salvar. Tente de novo em instantes.";
 let edCtx = null;
 function abrirEd(modo, ctx){
+  document.getElementById("dlgDia").close();
   edCtx = Object.assign({modo}, ctx);
   const sel = document.getElementById("edOwner");
   if (!sel.options.length) Object.keys(OWNERS).forEach(o => sel.add(new Option(o, o)));
   document.getElementById("edTitulo").textContent = modo === "editar" ? "Editar pauta" : (modo === "aprovar" ? "Aprovar sugestão" : "Nova pauta");
+  const fs = document.getElementById("edFmt");
+  if (!fs.options.length){ fs.add(new Option("— sem formato —","")); FORMATOS.forEach(f => fs.add(new Option(f, f))); }
+  fs.value = ctx.formato || "";
+  document.getElementById("edLink").value = ctx.link || "";
   document.getElementById("edTit").value = ctx.titulo || "";
   sel.value = ctx.owner || "A definir";
   document.getElementById("edData").value = ctx.data;
@@ -718,11 +844,13 @@ async function salvarEdicao(it, c){
   if (c.titulo !== undefined) pedido.titulo = c.titulo;
   if (c.owner !== undefined) pedido.responsavel = c.owner;
   if (c.obs !== undefined) pedido.obs = c.obs === "" ? " " : c.obs;
+  if (c.formato !== undefined) pedido.formato = c.formato === "" ? " " : c.formato;
+  if (c.link !== undefined) pedido.link = c.link === "" ? " " : c.link;
   if (c.removida) pedido.removida = true;
   if (it[5]){
     // Vídeo Turismo automático: vira uma pauta própria (ou some, se excluída)
     await post({acao:"alterar", chave:id, removida:true});
-    if (!c.removida) await post({acao:"criar", data:c.data || isoDia(it[0]), titulo:c.titulo !== undefined ? c.titulo : it[1], responsavel:c.owner !== undefined ? c.owner : it[2], obs:c.obs !== undefined ? c.obs : it[3]});
+    if (!c.removida) await post({acao:"criar", data:c.data || isoDia(it[0]), titulo:c.titulo !== undefined ? c.titulo : it[1], responsavel:c.owner !== undefined ? c.owner : it[2], obs:c.obs !== undefined ? c.obs : it[3], formato:c.formato !== undefined ? c.formato : it[7], link:c.link !== undefined ? c.link : it[8]});
   } else {
     await post(Object.assign({acao:"alterar", chave:id}, pedido));
   }
@@ -742,8 +870,11 @@ function initEd(){
     const owner = document.getElementById("edOwner").value;
     const data = document.getElementById("edData").value;
     const obs = document.getElementById("edObs").value.trim();
+    const formato = document.getElementById("edFmt").value;
+    const link = document.getElementById("edLink").value.trim();
     const m = document.getElementById("edMsg"), btn = document.getElementById("edSend");
     m.className = "msg";
+    if (link && !linkOk(link)){ m.textContent = "O link de referência precisa começar com http:// ou https://"; return; }
     if (!titulo){ m.textContent = "Escreva um título."; return; }
     if (!dataOk(data) || data < "2026-10-01" || data > "2027-12-31"){ m.textContent = "Escolha um dia entre outubro/2026 e dezembro/2027."; return; }
     const [yy,mm,dd] = data.split("-").map(Number);
@@ -756,12 +887,14 @@ function initEd(){
         if (owner !== it[2]) mud.owner = owner;
         if (data !== isoDia(it[0])) mud.data = data;
         if (obs !== it[3]) mud.obs = obs;
+        if (formato !== (it[7] || "")) mud.formato = formato;
+        if (link !== (it[8] || "")) mud.link = link;
         if (Object.keys(mud).length) await salvarEdicao(it, mud);
       } else if (edCtx.modo === "criar"){
-        await post({acao:"criar", data, titulo, responsavel:owner, obs});
+        await post({acao:"criar", data, titulo, responsavel:owner, obs, formato, link});
         await carregarEstado();
       } else {
-        await post({acao:"aprovar", id:edCtx.sug.id, data, titulo, responsavel:owner, obs});
+        await post({acao:"aprovar", id:edCtx.sug.id, data, titulo, responsavel:owner, obs, formato, link});
         await carregarEstado();
       }
       document.getElementById("dlgEd").close();
@@ -802,12 +935,13 @@ function renderSug(){
     tx.appendChild(h("strong",null,x.titulo || "(sem título)"));
     const a = h("a",null,x.link); a.href = x.link; a.target = "_blank"; a.rel = "noopener noreferrer";
     tx.appendChild(a);
+    if (x.info) tx.appendChild(h("small",null,x.info));
     row.appendChild(tx);
     const ac = h("div","sugacoes");
     if (x.status !== "pendente") ac.appendChild(h("span","stt " + x.status, ROT_STATUS[x.status] || x.status));
     if (ADMIN && x.status === "pendente"){
       const ap = h("button","btn pri","Aprovar"); ap.type = "button";
-      ap.addEventListener("click", () => abrirEd("aprovar", {sug:x, titulo:x.titulo, owner:"A definir", data:x.data, obs:"Formato: " + x.tipo + ". Referência: " + x.link}));
+      ap.addEventListener("click", () => abrirEd("aprovar", {sug:x, titulo:x.titulo, owner:"A definir", data:x.data, obs:x.info || "", formato:x.tipo, link:x.link}));
       const rj = h("button","btn","Rejeitar"); rj.type = "button";
       rj.addEventListener("click", async () => {
         if (!confirm("Rejeitar esta sugestão?")) return;
@@ -836,6 +970,19 @@ function showTab(which){
   document.getElementById("tabSug").setAttribute("aria-selected", String(!cal));
   if (!cal) carregarEstado();
 }
+function initDia(){
+  document.getElementById("diaFechar").addEventListener("click", () => document.getElementById("dlgDia").close());
+  document.getElementById("diaNovo").addEventListener("click", () => {
+    const d = diaAberto;
+    document.getElementById("dlgDia").close();
+    abrirEd("criar", {data:isoDia(d)});
+  });
+  document.getElementById("diaSugerir").addEventListener("click", () => {
+    const d = diaAberto;
+    document.getElementById("dlgDia").close();
+    openDlg(d);
+  });
+}
 function initSug(){
   document.getElementById("tabCal").addEventListener("click", () => showTab("cal"));
   document.getElementById("tabSug").addEventListener("click", () => showTab("sug"));
@@ -846,13 +993,14 @@ function initSug(){
     const tipo = (document.querySelector('input[name="tipo"]:checked')||{}).value;
     const link = document.getElementById("sugLink").value.trim();
     const titulo = document.getElementById("sugTitulo").value.trim();
+    const info = document.getElementById("sugInfo").value.trim();
     const m = document.getElementById("sugMsg"), btn = document.getElementById("sugSend");
     if (!titulo){ m.className = "msg"; m.textContent = "Escreva um título."; return; }
     if (!tipo){ m.className = "msg"; m.textContent = "Escolha o formato."; return; }
     if (!linkOk(link)){ m.className = "msg"; m.textContent = "Cole um link válido, começando com http:// ou https://"; return; }
     btn.disabled = true; m.className = "msg"; m.textContent = "Enviando...";
     try {
-      await post({acao:"sugerir", data:sugDia, titulo:titulo.slice(0,120), tipo, link});
+      await post({acao:"sugerir", data:sugDia, titulo:titulo.slice(0,120), tipo, link, info:info.slice(0,300)});
       m.className = "msg ok"; m.textContent = "Sugestão enviada. Obrigado!";
       await carregarEstado();
       setTimeout(() => document.getElementById("dlg").close(), 900);
@@ -864,6 +1012,7 @@ function initSug(){
 function startApp(){
   initSug();
   initEd();
+  initDia();
   buildMonths();
   const bar = document.getElementById("admBar");
   bar.hidden = !(ADMIN || USER);

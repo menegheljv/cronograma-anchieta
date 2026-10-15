@@ -10,9 +10,9 @@
 
 const TIPOS = ['Vídeo', 'Carrossel', 'Card', 'Stories'];
 const ESQUEMA = {
-  Sugestoes:   ['id', 'data', 'tipo', 'titulo', 'link', 'criadoEm', 'status'],
-  Pautas:      ['id', 'data', 'titulo', 'responsavel', 'obs', 'sugestaoId'],
-  Alteracoes:  ['chave', 'data', 'responsavel', 'titulo', 'obs', 'removida', 'feito', 'feitoPor']
+  Sugestoes:   ['id', 'data', 'tipo', 'titulo', 'link', 'criadoEm', 'status', 'info'],
+  Pautas:      ['id', 'data', 'titulo', 'responsavel', 'obs', 'sugestaoId', 'formato', 'link'],
+  Alteracoes:  ['chave', 'data', 'responsavel', 'titulo', 'obs', 'removida', 'feito', 'feitoPor', 'formato', 'link']
 };
 
 function aba_(nome) {
@@ -81,7 +81,7 @@ function doPost(e) {
     if (a === 'sugerir') {
       if (!dataOk_(c.data) || TIPOS.indexOf(c.tipo) < 0 || !c.titulo || String(c.titulo).length > 120 ||
           !/^https?:\/\//i.test(c.link) || String(c.link).length > 500) return resp_({ ok: false, erro: 'dados inválidos' });
-      aba_('Sugestoes').appendRow([Utilities.getUuid(), c.data, c.tipo, sanear_(c.titulo), c.link, new Date().toISOString(), 'pendente']);
+      aba_('Sugestoes').appendRow([Utilities.getUuid(), c.data, c.tipo, sanear_(c.titulo), c.link, new Date().toISOString(), 'pendente', sanear_(String(c.info || '').slice(0, 300))]);
       return resp_({ ok: true });
     }
 
@@ -102,7 +102,8 @@ function doPost(e) {
     if (a === 'criar' || a === 'aprovar') {
       if (!dataOk_(c.data) || !c.titulo) return resp_({ ok: false, erro: 'dados inválidos' });
       const id = 'x:' + Utilities.getUuid();
-      aba_('Pautas').appendRow([id, c.data, sanear_(c.titulo), sanear_(c.responsavel || 'A definir'), sanear_(c.obs || ''), a === 'aprovar' ? String(c.id) : '']);
+      const link = /^https?:\/\//i.test(c.link || '') ? String(c.link) : '';
+      aba_('Pautas').appendRow([id, c.data, sanear_(c.titulo), sanear_(c.responsavel || 'A definir'), sanear_(c.obs || ''), a === 'aprovar' ? String(c.id) : '', sanear_(c.formato || ''), link]);
       if (a === 'aprovar') {
         const sh = aba_('Sugestoes'), l = achar_(sh, String(c.id));
         if (l) sh.getRange(l, ESQUEMA.Sugestoes.indexOf('status') + 1).setValue('aprovada');
@@ -111,7 +112,8 @@ function doPost(e) {
     }
     if (a === 'alterar') {
       const campos = {};
-      ['data', 'responsavel', 'titulo', 'obs', 'removida'].forEach(k => { if (c[k] !== undefined) campos[k] = c[k]; });
+      ['data', 'responsavel', 'titulo', 'obs', 'formato', 'link', 'removida'].forEach(k => { if (c[k] !== undefined) campos[k] = c[k]; });
+      if (campos.link !== undefined && String(campos.link).trim() && !/^https?:\/\//i.test(String(campos.link).trim())) return resp_({ ok: false, erro: 'dados inválidos' });
       if (campos.data !== undefined && !dataOk_(campos.data)) return resp_({ ok: false, erro: 'dados inválidos' });
       upsertAlteracao_(String(c.chave), campos);
       return resp_({ ok: true });
