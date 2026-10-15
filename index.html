@@ -93,6 +93,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 .tabs{display:flex;gap:8px;margin:18px 0 0;border-bottom:1.5px solid var(--border)}
 .tab{font:inherit;font-size:15px;font-weight:700;padding:10px 16px;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;background:none;color:var(--ink-soft);cursor:pointer}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab small[hidden]{display:none}
 .tab small{font-size:12px;font-weight:700;background:var(--surface-2);border-radius:999px;padding:1px 8px;margin-left:6px}
 section[hidden]{display:none}
 .cell:not(.empty),.day{cursor:pointer}
@@ -205,6 +206,46 @@ a.btn[hidden]{display:none}
   .chip{flex:none;padding:10px 15px;font-size:14px}
   .foot{text-align:center}
 }
+html,body{overflow-x:hidden}
+@media (max-width:860px){
+  .hero h1{font-size:25px}
+  .tabs{overflow-x:auto;scrollbar-width:none;gap:0;margin-top:12px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:1 0 auto;padding:11px 5px;font-size:12.5px;white-space:nowrap;text-align:center}
+  .tab small{margin-left:4px;padding:1px 6px;font-size:11px}
+  .day.past{display:none}
+  .admbar{flex-wrap:nowrap;align-items:center}
+  .admdica{display:none}
+  .admbar{font-size:12.5px;padding:8px 12px;margin-top:10px}
+  .admbar .btn{padding:5px 12px}
+  .months{margin:12px -12px 0;padding:0 12px 4px}
+  .mchip{padding:9px 14px}
+  .chk{width:25px;height:25px;font-size:15px;margin-right:9px;vertical-align:-7px}
+  .item{font-size:14.5px}
+  .sughead{margin:14px 0 10px}
+  .sughead h2{font-size:18px}
+  .tfilt{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-12px;margin-right:-12px;padding:0 12px 4px}
+  .tfilt::-webkit-scrollbar{display:none}
+  .tfilt .chip{flex:none}
+  .sugitem{padding:12px}
+  .sugacoes{width:100%}
+  .sugacoes .btn{flex:1 1 0;padding:10px 12px}
+  .pauta{padding:12px}
+  .pauta .linha{grid-template-columns:1fr;gap:1px}
+  .pauta .k{font-size:12px}
+  .pauta .acoesp{width:100%}
+  .pauta .acoesp .btn{flex:1 1 0;padding:9px 12px;font-size:14px}
+  .dem{padding:12px}
+  dialog{width:calc(100% - 20px);max-height:90vh;overflow:auto;border-radius:16px}
+  dialog form,.diabox{padding:18px}
+  dialog h2{font-size:18px}
+  dialog input[type=text],dialog input[type=url],dialog input[type=date],dialog select{font-size:16px;padding:12px}
+  .tipos span{padding:13px 8px}
+  .acoes{flex-wrap:wrap}
+  .acoes .btn{flex:1 1 auto;padding:12px 16px}
+  #diaItens{max-height:none}
+  #gate form{gap:14px}
+}
 </style>
 </head>
 <body>
@@ -228,9 +269,9 @@ a.btn[hidden]{display:none}
   </div>
   <div class="tabs" role="tablist">
     <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
-    <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount">0</small></button>
-    <button class="tab" id="tabProg" role="tab" aria-selected="false" type="button">Programar<small id="progCount">0</small></button>
-    <button class="tab" id="tabDem" role="tab" aria-selected="false" type="button">Demandas<small id="demCount">0</small></button>
+    <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount" hidden>0</small></button>
+    <button class="tab" id="tabProg" role="tab" aria-selected="false" type="button">Programar<small id="progCount" hidden>0</small></button>
+    <button class="tab" id="tabDem" role="tab" aria-selected="false" type="button">Demandas<small id="demCount" hidden>0</small></button>
   </div>
   <section id="vCal">
   <nav class="months" id="months" aria-label="Escolher o mês"></nav>
@@ -702,7 +743,7 @@ function cardProg(x){
 function renderProg(){
   const todas = listaProgramar();
   const fila = todas.filter(x => !x.programada), feitas = todas.filter(x => x.programada);
-  document.getElementById("progCount").textContent = fila.length;
+  contador("progCount", fila.length);
   const a = document.getElementById("progLista"), b = document.getElementById("progFeitas");
   a.textContent = ""; b.textContent = "";
   document.getElementById("progVazio").hidden = fila.length > 0;
@@ -928,8 +969,9 @@ function setMonth(i, manter){
     if (t) t.scrollIntoView({block:"start"});
   }
 }
+function contador(id, n){ const e = document.getElementById(id); e.textContent = n; e.hidden = !n; }
 function atualizar(){
-  document.getElementById("sugCount").textContent = pendentes().length;
+  contador("sugCount", pendentes().length);
   setMonth(CUR, true);
   renderSug();
   renderProg();
@@ -1144,7 +1186,7 @@ function renderDem(){
     tf.appendChild(c);
   });
   const itens = DEMS.filter(d => !demNivel || nivelDem(d) === demNivel).sort((a,b) => dataRecebida(b.ts) - dataRecebida(a.ts));
-  document.getElementById("demCount").textContent = DEMS.length;
+  contador("demCount", DEMS.length);
   vazio.hidden = itens.length > 0;
   itens.forEach(d => {
     const urg = /^sim/i.test(d.urgente), nv = nivelDem(d);
@@ -1235,8 +1277,8 @@ function startApp(){
   const bar = document.getElementById("admBar");
   bar.hidden = !(ADMIN || USER);
   document.getElementById("admTxt").innerHTML = ADMIN
-    ? "<b>Olá, abacaxi. Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
-    : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar. Todos veem o que está feito.";
+    ? "<b>Olá, abacaxi. Modo administrador.</b><span class='admdica'> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta.</span>"
+    : "<b>Olá, " + (USER || "") + ".</b><span class='admdica'> Marque ✓ nas suas pautas quando terminar. Todos veem o que está feito.</span>";
   document.getElementById("admSair").addEventListener("click", () => {
     try { sessionStorage.removeItem("cronoEntrada"); } catch(e){}
     location.reload();
