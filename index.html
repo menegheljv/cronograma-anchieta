@@ -320,15 +320,6 @@ html,body{overflow-x:hidden}
   <section id="vLeg" hidden>
     <div class="sughead"><h2>Dados de postagem</h2></div>
     <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida, com outras opções para clicar. Você pode editar de novo quando quiser, até a pauta ser programada.</p>
-    <div class="arrobas" id="arrobasPainel" hidden>
-      <span class="rot">Arrobas prontos (aparecem como botões no campo Colab)</span>
-      <div class="arrobas-lista" id="arrobasLista"></div>
-      <form class="arrobas-add" id="arrobasForm" autocomplete="off">
-        <input id="arrobaNome" type="text" placeholder="Nome do botão (ex.: Saúde)" maxlength="24" aria-label="Nome do botão">
-        <input id="arrobaNovo" type="text" placeholder="@perfil" maxlength="40" autocapitalize="off" aria-label="Novo arroba">
-        <button class="btn" type="submit">Adicionar</button>
-      </form>
-    </div>
     <div class="tfilt" id="legFiltro"></div>
     <p class="vazio" id="legVazio" hidden>Nada por aqui. Quando uma pauta receber ✓, ela aparece nesta aba até ser programada ou postada.</p>
     <div id="legLista"></div>
@@ -933,35 +924,9 @@ function arrobasProntos(){
   const todos = [...ARROBAS_BASE.map(x => ({...x, base:true})), ...arrobasCustom()];
   return todos.filter((x,i,arr) => arr.findIndex(y => y.a === x.a) === i);
 }
-async function salvarArrobas(lista){
+async function salvarArrobas(lista, atualizarTela = true){
   await post({acao:"alterar", chave:"cfg:arrobas", obs:lista.map(x => x.r + "=" + x.a).join(";") || " "});
-  await carregarEstado();
-}
-function renderArrobasPainel(){
-  const painel = document.getElementById("arrobasPainel");
-  painel.hidden = !ADMIN;
-  if (!ADMIN) return;
-  const box = document.getElementById("arrobasLista"); box.textContent = "";
-  arrobasProntos().forEach(x => {
-    const c = h("button","arr", x.r); c.type = "button"; c.title = x.a;
-    c.appendChild(h("span","x"," " + x.a));
-    if (!x.base){
-      c.appendChild(h("span","x","×")); c.title = x.a + " (clique para remover)";
-      c.addEventListener("click", async () => { try { await salvarArrobas(arrobasCustom().filter(z => z.a !== x.a)); } catch(e){ alert(msgErro(e)); } });
-    } else c.disabled = true;
-    box.appendChild(c);
-  });
-}
-function iniciarArrobasForm(){
-  document.getElementById("arrobasForm").addEventListener("submit", async e => {
-    e.preventDefault();
-    const inp = document.getElementById("arrobaNovo"), nome = document.getElementById("arrobaNome"), a = normArroba(inp.value);
-    if (!a) return;
-    try {
-      await salvarArrobas([...arrobasCustom().filter(z => z.a !== a), {r:limpaRotulo(nome.value) || a, a}]);
-      inp.value = ""; nome.value = "";
-    } catch(err){ alert(msgErro(err)); }
-  });
+  if (atualizarTela) await carregarEstado();
 }
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
@@ -969,7 +934,6 @@ const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + p
 const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso());
 const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
 function renderLeg(){
-  renderArrobasPainel();
   const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
   const fl = document.getElementById("legFiltro"); fl.textContent = "";
   const todos = listaDados();
@@ -1054,7 +1018,23 @@ function renderLeg(){
       chips.appendChild(b);
     });
     co.addEventListener("input", pintar);
-    w2.appendChild(chips);
+    if (ADMIN){
+      // só o administrador cadastra novos botões (aqui embaixo, junto dos botões)
+      const nome = h("input"); nome.type = "text"; nome.placeholder = "Nome do botão"; nome.maxLength = 30; nome.setAttribute("aria-label","Nome do novo botão");
+      const novo = h("input"); novo.type = "text"; novo.placeholder = "@perfil"; novo.maxLength = 40; novo.autocapitalize = "off"; novo.setAttribute("aria-label","Arroba do novo botão");
+      const mais = h("button","btn","+ Adicionar botão"); mais.type = "button";
+      const form = h("div","arrobas-add"); form.appendChild(nome); form.appendChild(novo); form.appendChild(mais);
+      mais.addEventListener("click", async () => {
+        const a = normArroba(novo.value); if (!a) return;
+        try {
+          await salvarArrobas([...arrobasCustom().filter(z => z.a !== a), {r:limpaRotulo(nome.value) || a, a}], false);
+          const b = h("button","arr", limpaRotulo(nome.value) || a); b.type = "button"; b.dataset.a = a; b.title = a;
+          b.addEventListener("click", () => { const l = atual(); co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", "); legSujo = true; pintar(); });
+          chips.appendChild(b); nome.value = ""; novo.value = "";
+        } catch(err){ alert(msgErro(err)); }
+      });
+      w2.appendChild(chips); w2.appendChild(form);
+    } else w2.appendChild(chips);
     g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
     bt.appendChild(sv); bt.appendChild(ok); c.appendChild(bt);
@@ -1691,7 +1671,6 @@ function startApp(){
   initSug();
   initEd();
   initDia();
-  iniciarArrobasForm();
   buildMonths();
   const bar = document.getElementById("admBar");
   bar.hidden = !(ADMIN || USER);
