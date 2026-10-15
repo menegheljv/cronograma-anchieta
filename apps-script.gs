@@ -32,7 +32,8 @@ function aba_(nome) {
 function txt_(v, hora) {
   if (v instanceof Date && hora) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm');
   if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  return v === null || v === undefined ? '' : String(v);
+  const t = v === null || v === undefined ? '' : String(v);
+  return /^'[=+\-]/.test(t) ? t.slice(1) : t;
 }
 function ler_(nome) {
   const v = aba_(nome).getDataRange().getValues();
@@ -48,7 +49,7 @@ function resp_(o) {
 }
 function sanear_(v) { // impede que um texto vire fórmula na planilha
   v = txt_(v);
-  return /^[=+\-@]/.test(v) ? "'" + v : v;
+  return /^[=+\-]/.test(v) ? "'" + v : v;   // o @ de arroba é permitido
 }
 function ehAdmin_(c) {
   const s = PropertiesService.getScriptProperties().getProperty('ADMIN_SENHA');

@@ -166,6 +166,17 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 .t-curto{display:none}
 .aviso-leve{margin:0 0 12px;color:var(--ink-soft);font-size:14px}
 .leg .pautatop .acoesp{align-items:center}
+.arrobas{margin:0 0 14px;padding:12px 14px;border:1.5px dashed var(--border);border-radius:14px}
+.arrobas[hidden]{display:none}
+.arrobas .rot{font-size:12.5px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:8px}
+.arrobas-lista,.arrobas-chips{display:flex;flex-wrap:wrap;gap:6px}
+.arrobas-add{display:flex;gap:8px;margin-top:10px}
+.arrobas-add input{flex:1;min-width:0;font:inherit;font-size:14.5px;padding:9px 12px;border:1.5px solid var(--border);border-radius:12px}
+.arrobas-add .btn{padding:8px 14px;font-size:14px}
+.arrobas-chips{margin-top:6px}
+.arr{font:inherit;font-size:13px;font-weight:600;padding:5px 11px;border:1.5px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer}
+.arr[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.arr .x{margin-left:7px;font-weight:800;opacity:.6}
 .leg .auto{font-size:12.5px;font-weight:700;color:var(--mariana-t);margin-top:2px}
 .leg textarea,.leg input[type=text],.leg input[type=time]{width:100%;font:inherit;font-size:14.5px;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;color:var(--ink)}
 .leg textarea{min-height:110px;resize:vertical;line-height:1.4}
@@ -304,6 +315,14 @@ html,body{overflow-x:hidden}
   <section id="vLeg" hidden>
     <div class="sughead"><h2>Dados de postagem</h2></div>
     <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida: é só revisar e salvar. Você pode editar de novo quando quiser, até a pauta ser programada.</p>
+    <div class="arrobas" id="arrobasPainel" hidden>
+      <span class="rot">Arrobas prontos (aparecem como botões no campo Colab)</span>
+      <div class="arrobas-lista" id="arrobasLista"></div>
+      <form class="arrobas-add" id="arrobasForm" autocomplete="off">
+        <input id="arrobaNovo" type="text" placeholder="@perfil" maxlength="40" autocapitalize="off" aria-label="Novo arroba">
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+    </div>
     <div class="tfilt" id="legFiltro"></div>
     <p class="vazio" id="legVazio" hidden>Nada por aqui. Quando uma pauta receber ✓, ela aparece nesta aba até ser programada ou postada.</p>
     <div id="legLista"></div>
@@ -883,12 +902,48 @@ function variarLegenda(base, n){
   const pool = CHAMADAS[tom], extra = pool[(n - 1) % pool.length];
   return corpo.replace(/\n+$/, "") + "\n" + extra + tags;
 }
+// ---------- Arrobas prontos (para o campo Colab) ----------
+const ARROBAS_BASE = ["@santuariodeanchieta"];   // único perfil confirmado; a coordenação cadastra os outros no painel da aba
+const normArroba = a => { a = String(a || "").trim().toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9._]/g, ""); return a ? "@" + a : ""; };
+function arrobasProntos(){
+  const salvo = ALT["cfg:arrobas"] ? String(ALT["cfg:arrobas"].obs || "") : "";
+  return [...new Set([...ARROBAS_BASE, ...salvo.split(/[\s,]+/).map(normArroba).filter(Boolean)])];
+}
+const arrobasCustom = () => arrobasProntos().filter(a => !ARROBAS_BASE.includes(a));
+async function salvarArrobas(lista){
+  await post({acao:"alterar", chave:"cfg:arrobas", obs:lista.join(" ") || " "});
+  await carregarEstado();
+}
+function renderArrobasPainel(){
+  const painel = document.getElementById("arrobasPainel");
+  painel.hidden = !ADMIN;
+  if (!ADMIN) return;
+  const box = document.getElementById("arrobasLista"); box.textContent = "";
+  arrobasProntos().forEach(a => {
+    const c = h("button","arr",a); c.type = "button";
+    if (!ARROBAS_BASE.includes(a)){
+      c.appendChild(h("span","x","×")); c.title = "Remover";
+      c.addEventListener("click", async () => { try { await salvarArrobas(arrobasCustom().filter(z => z !== a)); } catch(e){ alert(msgErro(e)); } });
+    } else c.disabled = true;
+    box.appendChild(c);
+  });
+}
+function iniciarArrobasForm(){
+  document.getElementById("arrobasForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const inp = document.getElementById("arrobaNovo"), a = normArroba(inp.value);
+    if (!a) return;
+    try { await salvarArrobas([...arrobasCustom(), a].filter((v,i,arr) => arr.indexOf(v) === i)); inp.value = ""; }
+    catch(err){ alert(msgErro(err)); }
+  });
+}
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
 const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
 const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso());
 const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
 function renderLeg(){
+  renderArrobasPainel();
   const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
   const fl = document.getElementById("legFiltro"); fl.textContent = "";
   const todos = listaDados();
@@ -903,6 +958,7 @@ function renderLeg(){
   vazio.hidden = itens.length > 0;
   itens.forEach(x => {
     const pode = !!(ADMIN || (USER && x.owner === USER));
+    const ok = h("span","salvo");
     const c = h("div","pauta leg"); corVars(c, OWNERS[x.owner]);
     const top = h("div","pautatop");
     const [yy,mm,dd] = x.data.split("-").map(Number);
@@ -936,10 +992,23 @@ function renderLeg(){
     const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
     const w2 = h("div"); w2.appendChild(h("span","rot","Colab (perfil que divide o post)"));
     const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
+    const chips = h("div","arrobas-chips");
+    const atual = () => co.value.split(/[\s,]+/).map(normArroba).filter(Boolean);
+    const pintar = () => chips.querySelectorAll(".arr").forEach(b => b.setAttribute("aria-pressed", String(atual().includes(b.dataset.a))));
+    arrobasProntos().forEach(a => {
+      const b = h("button","arr",a); b.type = "button"; b.dataset.a = a;
+      b.addEventListener("click", () => {
+        const l = atual();
+        co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", ");
+        legSujo = true; ok.textContent = ""; pintar();
+      });
+      chips.appendChild(b);
+    });
+    co.addEventListener("input", pintar);
+    w2.appendChild(chips);
     g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
     const gr = h("button","btn","Gerar outra legenda"); gr.type = "button"; let vi = 0;
-    const ok = h("span","salvo");
     bt.appendChild(sv); if (!sem) bt.appendChild(gr); bt.appendChild(ok); c.appendChild(bt);
     const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
     [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
@@ -1579,6 +1648,7 @@ function startApp(){
   initSug();
   initEd();
   initDia();
+  iniciarArrobasForm();
   buildMonths();
   const bar = document.getElementById("admBar");
   bar.hidden = !(ADMIN || USER);
