@@ -624,6 +624,29 @@ function itensDoMes(y, m){
       ? [d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Vídeo", "", prog]
       : [d, "Final de semana", "João", "Foto Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Foto", "", prog]);
   }
+  // toda sexta tem "A Semana em 1 min" (João), a menos que já esteja cadastrada nesse dia
+  for (let d=1; d<=dm; d++){
+    if (new Date(y, m, d).getDay() !== 5) continue;
+    if (lista.some(x => x[0] === d && /^A Semana em 1 min/i.test(x[1]))) continue;
+    const id = "f:" + key + "-" + pad2(d);
+    const a = ALT[id];
+    if (a && (a.removida === true || a.removida === "TRUE" || a.removida === 1)) continue;
+    const feito = !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1));
+    const prog = !!(a && (a.programada === true || a.programada === "TRUE" || a.programada === 1));
+    lista.push([d, "A Semana em 1 min", "João", "Produzir vídeo. Padrão de toda sexta.", id, true, feito, "Vídeo", "", prog]);
+  }
+  // toda última quinta do mês: TBT do mês (Isabela), a menos que já esteja cadastrado
+  let ultQuinta = 0;
+  for (let d=dm; d>=1; d--){ if (new Date(y, m, d).getDay() === 4){ ultQuinta = d; break; } }
+  if (ultQuinta && !lista.some(x => x[0] === ultQuinta && /^TBT/i.test(x[1]))){
+    const id = "t:" + key + "-" + pad2(ultQuinta);
+    const a = ALT[id];
+    if (!(a && (a.removida === true || a.removida === "TRUE" || a.removida === 1))){
+      const feito = !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1));
+      const prog = !!(a && (a.programada === true || a.programada === "TRUE" || a.programada === 1));
+      lista.push([ultQuinta, "TBT do mês de " + MESES[m].toLowerCase(), "Isabela", "Produzir. Padrão da última quinta do mês.", id, true, feito, "", "", prog]);
+    }
+  }
   return {lista, reais: base.length};
 }
 
@@ -638,6 +661,16 @@ function listaProgramar(){
       const sab = new Date(+k.slice(2,6), +k.slice(7,9)-1, +k.slice(10,12)).getDay() === 6;
       l.push({id:k, data:k.slice(2), titulo:"Final de semana", owner:sab ? "Wandinho" : "João", obs:(sab ? "Vídeo" : "Foto") + " Turismo. Padrão de fim de semana sem pauta.", formato:sab ? "Vídeo" : "Foto", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
     }
+  });
+  Object.keys(ALT).filter(k => k.startsWith("f:")).forEach(k => {
+    const a = ALT[k];
+    if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
+      l.push({id:k, data:k.slice(2), titulo:"A Semana em 1 min", owner:"João", obs:"Produzir vídeo. Padrão de toda sexta.", formato:"Vídeo", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+  });
+  Object.keys(ALT).filter(k => k.startsWith("t:")).forEach(k => {
+    const a = ALT[k];
+    if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
+      l.push({id:k, data:k.slice(2), titulo:"TBT do mês de " + MESES[+k.slice(7,9)-1].toLowerCase(), owner:"Isabela", obs:"Produzir. Padrão da última quinta do mês.", formato:"", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
   });
   return l.sort((a,b) => a.data.localeCompare(b.data));
 }
@@ -1235,12 +1268,12 @@ function cyrb53(str){
   return 4294967296 * (2097151 & h2) + (h1>>>0);
 }
 function identificar(entrada){
-  if (cyrb53(entrada) === ADMIN_HASH) return {admin:true, user:null};
+  if (cyrb53(entrada.trim().toLowerCase()) === ADMIN_HASH) return {admin:true, user:null};
   const nome = Object.keys(OWNERS).find(n => n !== "A definir" && semAcento(n) === semAcento(entrada));
   return nome ? {admin:false, user:nome} : null;
 }
 function entrar(id, texto){
-  ADMIN = id.admin; USER = id.user; SENHA = id.admin ? texto : "";
+  ADMIN = id.admin; USER = id.user; SENHA = id.admin ? texto.trim().toLowerCase() : "";
   try { sessionStorage.setItem("cronoEntrada", texto); } catch(e){}
   document.getElementById("gate").hidden = true;
   document.getElementById("app").hidden = false;
