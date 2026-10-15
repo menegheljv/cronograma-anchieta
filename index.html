@@ -880,9 +880,8 @@ function startApp(){
 }
 
 // Senhas de entrada. Atenção: é só uma barreira simples no navegador, não é segurança real.
-// "xuxa" entra para ver e sugerir. A senha de administrador libera editar, mover e aprovar;
+// Cada pessoa entra com a própria senha. A senha de administrador libera editar, mover e aprovar;
 // quando há SUGGEST_URL, o servidor (Apps Script) confere essa senha de novo a cada gravação.
-const PASS_HASH = 1612892469399563;   // "xuxa": visitante, só vê e sugere
 const ADMIN_HASH = 7936277791153394;
 // Senha de cada pessoa (hash). Quem entra com a própria senha marca ✓ só nas suas pautas.
 const PESSOAS = {};
@@ -898,7 +897,6 @@ function identificar(senha){
   if (hv === ADMIN_HASH) return {admin:true, user:null};
   const nome = Object.keys(PESSOAS).find(n => PESSOAS[n] === hv);
   if (nome) return {admin:false, user:nome};
-  if (hv === PASS_HASH) return {admin:false, user:null};
   return null;
 }
 function entrar(id, senha){
