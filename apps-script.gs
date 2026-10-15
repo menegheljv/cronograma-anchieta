@@ -83,8 +83,8 @@ function doPost(e) {
 
     if (a === 'sugerir') {
       if (!dataOk_(c.data) || TIPOS.indexOf(c.tipo) < 0 || !c.titulo || String(c.titulo).length > 120 ||
-          !/^https?:\/\//i.test(c.link) || String(c.link).length > 500) return resp_({ ok: false, erro: 'dados inválidos' });
-      aba_('Sugestoes').appendRow([Utilities.getUuid(), c.data, c.tipo, sanear_(c.titulo), c.link, new Date().toISOString(), 'pendente', sanear_(String(c.info || '').slice(0, 300))]);
+          (c.link && !/^https?:\/\//i.test(c.link)) || String(c.link || '').length > 500) return resp_({ ok: false, erro: 'dados inválidos' });
+      aba_('Sugestoes').appendRow([Utilities.getUuid(), c.data, c.tipo, sanear_(c.titulo), c.link || '', new Date().toISOString(), 'pendente', sanear_(String(c.info || '').slice(0, 300))]);
       return resp_({ ok: true });
     }
 
