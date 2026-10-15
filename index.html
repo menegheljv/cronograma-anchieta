@@ -117,12 +117,28 @@ legend,.lbl{font-size:13px;font-weight:700;margin-bottom:8px;padding:0}
 .tipos span{display:block;text-align:center;padding:11px 8px;border:1.5px solid var(--border);border-radius:12px;font-weight:600;font-size:14.5px}
 .tipos input:checked+span{background:var(--ink);border-color:var(--ink);color:#fff}
 .tipos input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
-dialog input[type=text],dialog input[type=url]{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px}
-dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+dialog input[type=text],dialog input[type=url],dialog input[type=date],dialog select{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px}
+dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=date]:focus,dialog select:focus{outline:2px solid var(--accent);border-color:var(--accent)}
 .acoes{display:flex;gap:10px;justify-content:flex-end}
 .btn{font:inherit;font-size:15px;font-weight:700;padding:11px 18px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
 .btn.pri{background:var(--ink);color:#fff}
 .btn:disabled{opacity:.5;cursor:wait}
+.btn.danger{border-color:var(--wandinho);color:var(--wandinho)}
+.admbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0 0;padding:10px 14px;border-radius:12px;background:#eef6ee;border:1.5px solid #cfe3cf;font-size:13.5px}
+.admbar .btn{padding:6px 14px;font-size:13.5px}
+.admbar[hidden]{display:none}
+.item.adm{cursor:grab}
+.chk{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin:0 7px 0 0;vertical-align:-3px;border:2px solid var(--ct,var(--c));border-radius:5px;background:#fff;color:var(--ct,var(--c));font:inherit;font-size:12px;font-weight:800;line-height:1;padding:0;cursor:pointer}
+.chk.ok{border-color:var(--ct,var(--c));background:transparent;cursor:default}
+.item.feito{opacity:.6}
+.item.feito .chk:not(.ok){background:var(--c);color:var(--on,#fff)}
+.own .chk{border-color:var(--on,#fff);background:transparent;color:var(--on,#fff)}
+.cell.alvo{outline:2px dashed var(--accent);outline-offset:1px;background:#fff7fa}
+.sugacoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sugacoes .btn{padding:7px 14px;font-size:13.5px}
+.stt{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft)}
+.stt.aprovada{background:#e3f4e8;color:var(--joao)}
+.sugitem.rejeitada{opacity:.55}
 .msg{min-height:18px;font-size:13.5px;color:var(--wandinho)}
 .msg.ok{color:var(--joao)}
 .aviso{margin:16px 0 0;padding:12px 14px;border-radius:12px;background:#fff7e6;border:1.5px solid #f0d9a8;color:#6b4e00;font-size:13.5px}
@@ -130,14 +146,14 @@ dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var
 .sughead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0 12px}
 .sughead h2{margin:0;font-size:20px}
 .tfilt{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-.sugitem{display:grid;grid-template-columns:110px 110px 1fr;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;background:#fff}
+.sugitem{display:grid;grid-template-columns:110px 110px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;background:#fff}
 .sugitem .dt{font-weight:700}
 .tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--ct,var(--c));border:1.5px solid var(--c);justify-self:start}
 .sugtxt{min-width:0}
 .sugtxt strong{display:block;font-size:15px;overflow-wrap:anywhere}
 .sugitem a{color:var(--marcos);overflow-wrap:anywhere;font-size:14px}
 .sugitem small{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}
-@media (max-width:860px){.sugitem{grid-template-columns:1fr auto;}.sugtxt{grid-column:1/-1}}
+@media (max-width:860px){.sugitem{grid-template-columns:1fr auto;}.sugtxt,.sugacoes{grid-column:1/-1}}
 .foot{margin-top:28px;color:var(--ink-soft);font-size:13px}
 
 @media (max-width:860px){
@@ -166,6 +182,10 @@ dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var
     <h1 id="titulo">Cronograma de Outubro 2026</h1>
     <p>Prefeitura de Anchieta · pautas de conteúdo das redes sociais</p>
   </header>
+  <div class="admbar" id="admBar" hidden>
+    <span id="admTxt"></span>
+    <button class="btn" id="admSair" type="button">Sair</button>
+  </div>
   <div class="tabs" role="tablist">
     <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
     <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount">0</small></button>
@@ -180,7 +200,7 @@ dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var
   <p class="foot">Clique em um dia para sugerir uma pauta. O cronograma em si só é alterado pela coordenação.</p>
   </section>
   <section id="vSug" hidden>
-    <p class="aviso" id="avisoLocal" hidden>Modo de teste: as sugestões ficam salvas só neste navegador. Para juntar as de todos em um só lugar, falta conectar a planilha (veja apps-script.gs).</p>
+    <p class="aviso" id="avisoLocal" hidden>Modo de teste: as sugestões ficam salvas só neste navegador. Para juntar as de todos em um só lugar, falta conectar a planilha (veja apps-script.gs). As alterações do administrador também ficam só aqui.</p>
     <div class="sughead"><h2>Todas as sugestões</h2><button class="btn" id="sugRefresh" type="button">Atualizar</button></div>
     <div class="tfilt" id="tfilt"></div>
     <div id="sugList"></div>
@@ -207,6 +227,25 @@ dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var
     <div class="acoes">
       <button class="btn" type="button" id="sugCancel">Cancelar</button>
       <button class="btn pri" type="submit" id="sugSend">Enviar sugestão</button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgEd">
+  <form id="edForm" method="dialog">
+    <div><h2 id="edTitulo">Editar pauta</h2><p>Só o administrador altera o cronograma.</p></div>
+    <div><label class="lbl" for="edTit">Título</label>
+      <input id="edTit" type="text" maxlength="160" required autocomplete="off"></div>
+    <div><label class="lbl" for="edOwner">Responsável</label><select id="edOwner"></select></div>
+    <div><label class="lbl" for="edData">Dia</label>
+      <input id="edData" type="date" min="2026-10-01" max="2027-12-31" required></div>
+    <div><label class="lbl" for="edObs">Observação</label>
+      <input id="edObs" type="text" maxlength="300" autocomplete="off"></div>
+    <div class="msg" id="edMsg" role="status"></div>
+    <div class="acoes">
+      <button class="btn danger" type="button" id="edDel" hidden>Excluir</button>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="edCancel">Cancelar</button>
+      <button class="btn pri" type="submit" id="edSend">Salvar</button>
     </div>
   </form>
 </dialog>
@@ -376,9 +415,12 @@ const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Ag
 const MONTHS = Array.from({length:15}, (_,i) => ({y:2026+Math.floor((9+i)/12), m:(9+i)%12}));
 const now = new Date();
 const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-let ITEMS = [], FIRST_DOW = 0, DAYS = 30, TODAY = 0, CY = 2026, CM = 9;
+let ITEMS = [], FIRST_DOW = 0, DAYS = 30, TODAY = 0, CY = 2026, CM = 9, CUR = 0;
 const isPast = d => new Date(CY, CM, d) < startOfToday;
 let active = null;
+let ADMIN = false, USER = null, SENHA = "";
+const pad2 = n => String(n).padStart(2,"0");
+const isoDia = d => CY + "-" + pad2(CM+1) + "-" + pad2(d);
 
 function h(tag, cls, text){
   const n = document.createElement(tag);
@@ -391,15 +433,146 @@ function corVars(el, v){
   el.style.setProperty("--ct", `var(${v}-t, var(${v}))`);
   el.style.setProperty("--on", `var(${v}-on, #fff)`);
 }
+
+// ---------- Estado compartilhado (sugestões, pautas novas e alterações) ----------
+const TIPOS = {"Vídeo":"--joao","Carrossel":"--renata","Card":"--isabela","Stories":"--mariana"};
+let SUGS = [], EXTRAS = [], ALT = {}, sugTipo = null, sugDia = null;
+const ESTADO_LOCAL = "cronoEstado";
+const linkOk = u => { try { const x = new URL(u); return x.protocol==="http:" || x.protocol==="https:"; } catch(e){ return false; } };
+const dataOk = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+function lerEstadoLocal(){ try { return JSON.parse(localStorage.getItem(ESTADO_LOCAL) || "{}"); } catch(e){ return {}; } }
+function gravarEstadoLocal(e){ try { localStorage.setItem(ESTADO_LOCAL, JSON.stringify(e)); } catch(x){} }
+
+// Modo de teste (sem SUGGEST_URL): tudo fica só neste navegador.
+function apiLocal(c){
+  const e = lerEstadoLocal();
+  e.sugestoes = e.sugestoes || []; e.extras = e.extras || []; e.alteracoes = e.alteracoes || [];
+  if (c.acao === "sugerir"){
+    e.sugestoes.push({id:uid(), data:c.data, tipo:c.tipo, titulo:c.titulo, link:c.link, criadoEm:new Date().toISOString(), status:"pendente"});
+  } else if (c.acao === "marcar"){
+    const hs = cyrb53(c.senha || "");
+    const okAdm = ADMIN && hs === ADMIN_HASH;
+    const okPes = USER && c.pessoa === USER && PESSOAS[USER] === hs && c.responsavel === USER;
+    if (!okAdm && !okPes) throw new Error("senha");
+    let a = e.alteracoes.find(x => x.chave === c.chave);
+    if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
+    a.feito = !!c.feito; a.feitoPor = c.pessoa;
+  } else {
+    if (!ADMIN || cyrb53(c.senha || "") !== ADMIN_HASH) throw new Error("senha");
+    if (c.acao === "rejeitar"){
+      const s = e.sugestoes.find(x => x.id === c.id); if (s) s.status = "rejeitada";
+    } else if (c.acao === "aprovar"){
+      const s = e.sugestoes.find(x => x.id === c.id); if (s) s.status = "aprovada";
+      e.extras.push({id:"x:"+uid(), data:c.data, titulo:c.titulo, responsavel:c.responsavel, obs:c.obs||"", sugestaoId:c.id});
+    } else if (c.acao === "criar"){
+      e.extras.push({id:"x:"+uid(), data:c.data, titulo:c.titulo, responsavel:c.responsavel, obs:c.obs||""});
+    } else if (c.acao === "alterar"){
+      let a = e.alteracoes.find(x => x.chave === c.chave);
+      if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
+      ["data","responsavel","titulo","obs","removida"].forEach(k => { if (c[k] !== undefined) a[k] = c[k]; });
+    } else throw new Error("acao");
+  }
+  gravarEstadoLocal(e);
+  return {ok:true};
+}
+async function post(c){
+  if (c.acao !== "sugerir"){ c.senha = SENHA; c.pessoa = ADMIN ? "Admin" : USER; }
+  if (!SUGGEST_URL) return apiLocal(c);
+  const r = await fetch(SUGGEST_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(c)});
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.erro || "falha");
+  return j;
+}
+async function carregarEstado(){
+  let e = {};
+  if (SUGGEST_URL){
+    try { const r = await fetch(SUGGEST_URL + "?acao=estado"); e = await r.json(); } catch(x){ e = {}; }
+  } else e = lerEstadoLocal();
+  SUGS = (e.sugestoes || []).filter(x => x && TIPOS[x.tipo] && linkOk(x.link) && dataOk(x.data)).map(x => Object.assign({}, x, {status: x.status || "pendente"}));
+  EXTRAS = (e.extras || []).filter(x => x && x.id && dataOk(x.data) && x.titulo && OWNERS[x.responsavel || "A definir"]);
+  ALT = {};
+  (Array.isArray(e.alteracoes) ? e.alteracoes : []).forEach(a => { if (a && a.chave) ALT[a.chave] = a; });
+  document.getElementById("avisoLocal").hidden = !!SUGGEST_URL;
+  atualizar();
+}
+const pendentes = () => SUGS.filter(x => x.status === "pendente");
+const sugCount = d => pendentes().filter(x => x.data === isoDia(d)).length;
+
+// Todas as pautas com as alterações aplicadas (inclui as aprovadas das sugestões).
+function todosItens(){
+  const out = [];
+  Object.keys(DATA).forEach(key => DATA[key].forEach(([d,t,o,obs]) => {
+    const dt = key + "-" + pad2(d);
+    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false});
+  }));
+  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false}));
+  return out.map(x => {
+    const a = ALT[x.id]; if (!a) return x;
+    const rem = a.removida === true || a.removida === "TRUE" || a.removida === 1;
+    return {id:x.id, data:dataOk(a.data) ? a.data : x.data, titulo:a.titulo || x.titulo,
+      owner:OWNERS[a.responsavel] ? a.responsavel : x.owner, obs:a.obs ? a.obs : x.obs, removida:rem,
+      feito:a.feito === true || a.feito === "TRUE" || a.feito === 1};
+  }).filter(x => !x.removida);
+}
+function itensDoMes(y, m){
+  const key = y + "-" + pad2(m+1);
+  const base = todosItens().filter(x => x.data.startsWith(key));
+  const lista = base.map(x => [+x.data.slice(8), x.titulo, x.owner, String(x.obs).trim(), x.id, false, !!x.feito]);
+  const dias = new Set(lista.map(x => x[0]));
+  const dm = new Date(y, m+1, 0).getDate();
+  // regra: fim de semana sem pauta vira Vídeo Turismo (Wandinho)
+  for (let d=1; d<=dm; d++){
+    const w = new Date(y, m, d).getDay();
+    const id = "w:" + key + "-" + pad2(d);
+    const a = ALT[id], rem = a && (a.removida === true || a.removida === "TRUE" || a.removida === 1);
+    if ((w===0 || w===6) && !dias.has(d) && !rem) lista.push([d, "Vídeo Turismo", "Wandinho", "Padrão de fim de semana sem pauta", id, true, !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1))]);
+  }
+  return {lista, reais: base.length};
+}
+
+// ---------- Calendário ----------
 function itemEl(it, withNote){
   const [, title, owner, note] = it;
   const n = h("div", "item");
   corVars(n, OWNERS[owner]);
   n.dataset.owner = owner;
+  const pode = !!(ADMIN || (USER && owner === USER));
+  if (it[6]) n.classList.add("feito");
+  if (pode){
+    const ck = h("button","chk", it[6] ? "✓" : ""); ck.type = "button";
+    ck.setAttribute("role","checkbox"); ck.setAttribute("aria-checked", String(!!it[6]));
+    ck.setAttribute("aria-label", (it[6] ? "Desmarcar: " : "Marcar como feita: ") + title);
+    ck.addEventListener("click", e => { e.stopPropagation(); alternarFeito(it); });
+    n.appendChild(ck);
+  } else if (it[6]) n.appendChild(h("span","chk ok","✓"));
   n.appendChild(h("b", null, owner === "A definir" ? "" : owner + ": "));
   n.appendChild(document.createTextNode(title));
   if (withNote && note){ n.appendChild(h("small", null, note)); }
+  if (ADMIN){
+    n.classList.add("adm");
+    n.draggable = true;
+    n.title = "Clique para editar ou arraste para outro dia";
+    n.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", it[4]); e.dataTransfer.effectAllowed = "move"; });
+    n.addEventListener("click", e => { e.stopPropagation(); abrirEd("editar", {it, titulo:title, owner, data:isoDia(it[0]), obs:note}); });
+  }
   return n;
+}
+async function alternarFeito(it){
+  try { await post({acao:"marcar", chave:it[4], feito:!it[6], responsavel:it[2]}); await carregarEstado(); }
+  catch(err){ alert(msgErro(err)); }
+}
+function aoClicarDia(d){ if (ADMIN) abrirEd("criar", {data:isoDia(d)}); else openDlg(d); }
+function ativarDrop(el, d){
+  el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("alvo"); });
+  el.addEventListener("dragleave", () => el.classList.remove("alvo"));
+  el.addEventListener("drop", async e => {
+    e.preventDefault(); el.classList.remove("alvo");
+    const id = e.dataTransfer.getData("text/plain");
+    const it = ITEMS.find(x => x[4] === id);
+    if (!it || it[0] === d) return;
+    try { await salvarEdicao(it, {data:isoDia(d)}); } catch(err){ alert(msgErro(err)); }
+  });
 }
 function render(){
   const grid = document.getElementById("grid");
@@ -410,8 +583,9 @@ function render(){
     const dow = (d-1+FIRST_DOW)%7;
     const passou = isPast(d);
     const day = passou ? [] : ITEMS.filter(it => it[0]===d);
-    const flags = ((dow===0||dow===6)?" weekend":"")+(d===TODAY?" today":"")+(isPast(d)?" past":"");
+    const flags = ((dow===0||dow===6)?" weekend":"")+(d===TODAY?" today":"")+(passou?" past":"");
     const owners = day.map(it => it[2]).join("|");
+    const rotulo = ADMIN ? "+ pauta" : "+ sugerir";
 
     const cell = h("div","cell"+flags);
     cell.dataset.owners = owners;
@@ -420,11 +594,12 @@ function render(){
     if (!passou){
       const nSug = sugCount(d);
       if (nSug) cell.appendChild(h("span","sugbadge", nSug + (nSug>1 ? " sugestões" : " sugestão")));
-      cell.appendChild(h("button","add","+ sugerir")).type = "button";
+      cell.appendChild(h("button","add",rotulo)).type = "button";
       cell.tabIndex = 0; cell.setAttribute("role","button");
-      cell.setAttribute("aria-label","Sugerir pauta para o dia " + d);
-      cell.addEventListener("click", () => openDlg(d));
-      cell.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); openDlg(d); } });
+      cell.setAttribute("aria-label",(ADMIN ? "Nova pauta no dia " : "Sugerir pauta para o dia ") + d);
+      cell.addEventListener("click", () => aoClicarDia(d));
+      cell.addEventListener("keydown", e => { if (e.target === cell && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); aoClicarDia(d); } });
+      if (ADMIN) ativarDrop(cell, d);
     } else cell.style.cursor = "default";
     grid.appendChild(cell);
 
@@ -437,9 +612,9 @@ function render(){
     if (!passou){
       const nS = sugCount(d);
       if (nS) card.appendChild(h("span","sugbadge", nS + (nS>1 ? " sugestões" : " sugestão")));
-      const ad = h("button","add","+ Sugerir pauta para este dia"); ad.type = "button";
+      const ad = h("button","add", ADMIN ? "+ Nova pauta neste dia" : "+ Sugerir pauta para este dia"); ad.type = "button";
       card.appendChild(ad);
-      card.addEventListener("click", () => openDlg(d));
+      card.addEventListener("click", () => aoClicarDia(d));
     } else card.style.cursor = "default";
     list.appendChild(card);
   }
@@ -479,32 +654,33 @@ function buildFilters(){
     box.appendChild(c);
   });
 }
-function setMonth(i){
+function setMonth(i, manter){
   const {y,m} = MONTHS[i];
-  CY = y; CM = m; active = null;
-  const REAIS = DATA[y + "-" + String(m+1).padStart(2,"0")] || [];
+  CUR = i; CY = y; CM = m;
+  if (!manter) active = null;
+  const r = itensDoMes(y, m);
+  ITEMS = r.lista;
   FIRST_DOW = new Date(y, m, 1).getDay();
   DAYS = new Date(y, m+1, 0).getDate();
-  // regra: fim de semana sem pauta vira Vídeo Turismo (Wandinho)
-  ITEMS = REAIS.slice();
-  for (let d=1; d<=DAYS; d++){
-    const w = new Date(y, m, d).getDay();
-    if ((w===0 || w===6) && !REAIS.some(it => it[0]===d)) ITEMS.push([d, "Vídeo Turismo", "Wandinho", "Padrão de fim de semana sem pauta"]);
-  }
   TODAY = (now.getFullYear()===y && now.getMonth()===m) ? now.getDate() : 0;
   const nome = MESES[m] + " " + y;
   document.getElementById("titulo").textContent = "Cronograma de " + nome;
   document.title = "Cronograma de " + nome;
-  document.getElementById("vazio").hidden = REAIS.length > 0;
+  document.getElementById("vazio").hidden = r.reais > 0;
   document.querySelectorAll("#months .mchip").forEach((c,k) => {
     if (k === i) c.setAttribute("aria-current","true"); else c.removeAttribute("aria-current");
   });
   buildFilters();
   render();
-  if (TODAY && window.matchMedia("(max-width:860px)").matches){
+  if (!manter && TODAY && window.matchMedia("(max-width:860px)").matches){
     const t = document.querySelector(".day.today");
     if (t) t.scrollIntoView({block:"start"});
   }
+}
+function atualizar(){
+  document.getElementById("sugCount").textContent = pendentes().length;
+  setMonth(CUR, true);
+  renderSug();
 }
 function buildMonths(){
   const box = document.getElementById("months");
@@ -516,41 +692,89 @@ function buildMonths(){
     box.appendChild(c);
   });
 }
-// ---------- Sugestões ----------
-const TIPOS = {"Vídeo":"--joao","Carrossel":"--renata","Card":"--isabela","Stories":"--mariana"};
-let SUGS = [], sugTipo = null, sugDia = null;
-const pad2 = n => String(n).padStart(2,"0");
-const isoDia = d => CY + "-" + pad2(CM+1) + "-" + pad2(d);
-const sugCount = d => SUGS.filter(x => x.data === isoDia(d)).length;
-const linkOk = u => { try { const x = new URL(u); return x.protocol==="http:" || x.protocol==="https:"; } catch(e){ return false; } };
-function lerLocal(){ try { return JSON.parse(localStorage.getItem("cronoSug") || "[]"); } catch(e){ return []; } }
-async function carregarSug(){
-  if (SUGGEST_URL){
-    try {
-      const r = await fetch(SUGGEST_URL + "?acao=listar");
-      const j = await r.json();
-      SUGS = Array.isArray(j) ? j : [];
-    } catch(e){ SUGS = []; }
-  } else SUGS = lerLocal();
-  SUGS = SUGS.filter(x => x && TIPOS[x.tipo] && linkOk(x.link) && /^\d{4}-\d{2}-\d{2}$/.test(x.data));
-  document.getElementById("sugCount").textContent = SUGS.length;
-  document.getElementById("avisoLocal").hidden = !!SUGGEST_URL;
-  render(); renderSug();
+
+// ---------- Edição (somente admin) ----------
+const msgErro = err => err && err.message === "senha" ? "A senha de administrador não confere." : "Não consegui salvar. Tente de novo em instantes.";
+let edCtx = null;
+function abrirEd(modo, ctx){
+  edCtx = Object.assign({modo}, ctx);
+  const sel = document.getElementById("edOwner");
+  if (!sel.options.length) Object.keys(OWNERS).forEach(o => sel.add(new Option(o, o)));
+  document.getElementById("edTitulo").textContent = modo === "editar" ? "Editar pauta" : (modo === "aprovar" ? "Aprovar sugestão" : "Nova pauta");
+  document.getElementById("edTit").value = ctx.titulo || "";
+  sel.value = ctx.owner || "A definir";
+  document.getElementById("edData").value = ctx.data;
+  document.getElementById("edObs").value = ctx.obs || "";
+  document.getElementById("edDel").hidden = modo !== "editar";
+  document.getElementById("edSend").disabled = false;
+  const m = document.getElementById("edMsg"); m.textContent = ""; m.className = "msg";
+  const dlg = document.getElementById("dlgEd");
+  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open","");
 }
-async function enviarSug(item){
-  if (SUGGEST_URL){
-    const r = await fetch(SUGGEST_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(item)});
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.erro || "falha");
+async function salvarEdicao(it, c){
+  const id = it[4];
+  const pedido = {};
+  if (c.data !== undefined) pedido.data = c.data;
+  if (c.titulo !== undefined) pedido.titulo = c.titulo;
+  if (c.owner !== undefined) pedido.responsavel = c.owner;
+  if (c.obs !== undefined) pedido.obs = c.obs === "" ? " " : c.obs;
+  if (c.removida) pedido.removida = true;
+  if (it[5]){
+    // Vídeo Turismo automático: vira uma pauta própria (ou some, se excluída)
+    await post({acao:"alterar", chave:id, removida:true});
+    if (!c.removida) await post({acao:"criar", data:c.data || isoDia(it[0]), titulo:c.titulo !== undefined ? c.titulo : it[1], responsavel:c.owner !== undefined ? c.owner : it[2], obs:c.obs !== undefined ? c.obs : it[3]});
   } else {
-    const l = lerLocal(); l.push(item);
-    localStorage.setItem("cronoSug", JSON.stringify(l));
+    await post(Object.assign({acao:"alterar", chave:id}, pedido));
   }
+  await carregarEstado();
 }
+function initEd(){
+  document.getElementById("edCancel").addEventListener("click", () => document.getElementById("dlgEd").close());
+  document.getElementById("edDel").addEventListener("click", async () => {
+    if (!edCtx || !edCtx.it || !confirm("Excluir esta pauta?")) return;
+    const m = document.getElementById("edMsg");
+    try { await salvarEdicao(edCtx.it, {removida:true}); document.getElementById("dlgEd").close(); }
+    catch(err){ m.className = "msg"; m.textContent = msgErro(err); }
+  });
+  document.getElementById("edForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const titulo = document.getElementById("edTit").value.trim();
+    const owner = document.getElementById("edOwner").value;
+    const data = document.getElementById("edData").value;
+    const obs = document.getElementById("edObs").value.trim();
+    const m = document.getElementById("edMsg"), btn = document.getElementById("edSend");
+    m.className = "msg";
+    if (!titulo){ m.textContent = "Escreva um título."; return; }
+    if (!dataOk(data) || data < "2026-10-01" || data > "2027-12-31"){ m.textContent = "Escolha um dia entre outubro/2026 e dezembro/2027."; return; }
+    const [yy,mm,dd] = data.split("-").map(Number);
+    if (new Date(yy, mm-1, dd) < startOfToday){ m.textContent = "Escolha um dia a partir de hoje."; return; }
+    btn.disabled = true; m.textContent = "Salvando...";
+    try {
+      if (edCtx.modo === "editar"){
+        const it = edCtx.it, mud = {};
+        if (titulo !== it[1]) mud.titulo = titulo;
+        if (owner !== it[2]) mud.owner = owner;
+        if (data !== isoDia(it[0])) mud.data = data;
+        if (obs !== it[3]) mud.obs = obs;
+        if (Object.keys(mud).length) await salvarEdicao(it, mud);
+      } else if (edCtx.modo === "criar"){
+        await post({acao:"criar", data, titulo, responsavel:owner, obs});
+        await carregarEstado();
+      } else {
+        await post({acao:"aprovar", id:edCtx.sug.id, data, titulo, responsavel:owner, obs});
+        await carregarEstado();
+      }
+      document.getElementById("dlgEd").close();
+    } catch(err){ btn.disabled = false; m.textContent = msgErro(err); }
+  });
+}
+
+// ---------- Sugestões ----------
 function fmtDia(iso){
   const [y,m,d] = iso.split("-").map(Number);
   return pad2(d) + " " + MESES[m-1].slice(0,3) + " " + y;
 }
+const ROT_STATUS = {pendente:"Pendente", aprovada:"Aprovada", rejeitada:"Rejeitada"};
 function renderSug(){
   const box = document.getElementById("sugList"); box.textContent = "";
   const tf = document.getElementById("tfilt"); tf.textContent = "";
@@ -565,11 +789,12 @@ function renderSug(){
     c.addEventListener("click", () => { sugTipo = (sugTipo===t ? null : t); renderSug(); });
     tf.appendChild(c);
   });
+  const ordem = {pendente:0, aprovada:1, rejeitada:2};
   const lista = SUGS.filter(x => !sugTipo || x.tipo===sugTipo)
-    .sort((a,b) => a.data.localeCompare(b.data) || String(a.criadoEm).localeCompare(String(b.criadoEm)));
+    .sort((a,b) => ordem[a.status]-ordem[b.status] || a.data.localeCompare(b.data) || String(a.criadoEm).localeCompare(String(b.criadoEm)));
   document.getElementById("sugVazio").hidden = lista.length > 0;
   lista.forEach(x => {
-    const row = h("div","sugitem");
+    const row = h("div","sugitem " + x.status);
     row.appendChild(h("span","dt",fmtDia(x.data)));
     const tg = h("span","tag",x.tipo); corVars(tg, TIPOS[x.tipo]);
     row.appendChild(tg);
@@ -578,6 +803,19 @@ function renderSug(){
     const a = h("a",null,x.link); a.href = x.link; a.target = "_blank"; a.rel = "noopener noreferrer";
     tx.appendChild(a);
     row.appendChild(tx);
+    const ac = h("div","sugacoes");
+    if (x.status !== "pendente") ac.appendChild(h("span","stt " + x.status, ROT_STATUS[x.status] || x.status));
+    if (ADMIN && x.status === "pendente"){
+      const ap = h("button","btn pri","Aprovar"); ap.type = "button";
+      ap.addEventListener("click", () => abrirEd("aprovar", {sug:x, titulo:x.titulo, owner:"A definir", data:x.data, obs:"Formato: " + x.tipo + ". Referência: " + x.link}));
+      const rj = h("button","btn","Rejeitar"); rj.type = "button";
+      rj.addEventListener("click", async () => {
+        if (!confirm("Rejeitar esta sugestão?")) return;
+        try { await post({acao:"rejeitar", id:x.id}); await carregarEstado(); } catch(err){ alert(msgErro(err)); }
+      });
+      ac.appendChild(ap); ac.appendChild(rj);
+    }
+    row.appendChild(ac);
     box.appendChild(row);
   });
 }
@@ -596,12 +834,12 @@ function showTab(which){
   document.getElementById("vSug").hidden = cal;
   document.getElementById("tabCal").setAttribute("aria-selected", String(cal));
   document.getElementById("tabSug").setAttribute("aria-selected", String(!cal));
-  if (!cal) carregarSug();
+  if (!cal) carregarEstado();
 }
 function initSug(){
   document.getElementById("tabCal").addEventListener("click", () => showTab("cal"));
   document.getElementById("tabSug").addEventListener("click", () => showTab("sug"));
-  document.getElementById("sugRefresh").addEventListener("click", carregarSug);
+  document.getElementById("sugRefresh").addEventListener("click", carregarEstado);
   document.getElementById("sugCancel").addEventListener("click", () => document.getElementById("dlg").close());
   document.getElementById("sugForm").addEventListener("submit", async e => {
     e.preventDefault();
@@ -614,9 +852,9 @@ function initSug(){
     if (!linkOk(link)){ m.className = "msg"; m.textContent = "Cole um link válido, começando com http:// ou https://"; return; }
     btn.disabled = true; m.className = "msg"; m.textContent = "Enviando...";
     try {
-      await enviarSug({id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), data:sugDia, titulo:titulo.slice(0,120), tipo, link, criadoEm:new Date().toISOString()});
+      await post({acao:"sugerir", data:sugDia, titulo:titulo.slice(0,120), tipo, link});
       m.className = "msg ok"; m.textContent = "Sugestão enviada. Obrigado!";
-      await carregarSug();
+      await carregarEstado();
       setTimeout(() => document.getElementById("dlg").close(), 900);
     } catch(err){
       btn.disabled = false; m.textContent = "Não consegui enviar. Tente de novo em instantes.";
@@ -625,14 +863,29 @@ function initSug(){
 }
 function startApp(){
   initSug();
+  initEd();
   buildMonths();
+  const bar = document.getElementById("admBar");
+  bar.hidden = !(ADMIN || USER);
+  document.getElementById("admTxt").innerHTML = ADMIN
+    ? "<b>Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
+    : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar.";
+  document.getElementById("admSair").addEventListener("click", () => {
+    try { sessionStorage.removeItem("cronoSenha"); } catch(e){}
+    location.reload();
+  });
   let i = MONTHS.findIndex(({y,m}) => y===now.getFullYear() && m===now.getMonth());
   setMonth(i < 0 ? 0 : i);
-  carregarSug();
+  carregarEstado();
 }
 
-// Senha de entrada. Atenção: é só uma barreira simples no navegador, não é segurança real.
-const PASS_HASH = 1612892469399563;
+// Senhas de entrada. Atenção: é só uma barreira simples no navegador, não é segurança real.
+// "xuxa" entra para ver e sugerir. A senha de administrador libera editar, mover e aprovar;
+// quando há SUGGEST_URL, o servidor (Apps Script) confere essa senha de novo a cada gravação.
+const PASS_HASH = 1612892469399563;   // "xuxa": visitante, só vê e sugere
+const ADMIN_HASH = 7936277791153394;
+// Senha de cada pessoa (hash). Quem entra com a própria senha marca ✓ só nas suas pautas.
+const PESSOAS = {};
 function cyrb53(str){
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
   for (let i=0, ch; i<str.length; i++){ ch = str.charCodeAt(i); h1 = Math.imul(h1^ch, 2654435761); h2 = Math.imul(h2^ch, 1597334677); }
@@ -640,22 +893,32 @@ function cyrb53(str){
   h2 = Math.imul(h2^(h2>>>16), 2246822507) ^ Math.imul(h1^(h1>>>13), 3266489909);
   return 4294967296 * (2097151 & h2) + (h1>>>0);
 }
-function unlock(){
+function identificar(senha){
+  const hv = cyrb53(senha);
+  if (hv === ADMIN_HASH) return {admin:true, user:null};
+  const nome = Object.keys(PESSOAS).find(n => PESSOAS[n] === hv);
+  if (nome) return {admin:false, user:nome};
+  if (hv === PASS_HASH) return {admin:false, user:null};
+  return null;
+}
+function entrar(id, senha){
+  ADMIN = id.admin; USER = id.user; SENHA = senha;
+  try { sessionStorage.setItem("cronoSenha", senha); } catch(e){}
   document.getElementById("gate").hidden = true;
   document.getElementById("app").hidden = false;
   startApp();
 }
-let saved = null;
-try { saved = sessionStorage.getItem("cronoOk"); } catch(e){}
-if (saved === String(PASS_HASH)) unlock();
+let salva = null;
+try { salva = sessionStorage.getItem("cronoSenha"); } catch(e){}
+const idSalva = salva ? identificar(salva) : null;
+if (idSalva) entrar(idSalva, salva);
 else {
   document.getElementById("gateForm").addEventListener("submit", e => {
     e.preventDefault();
     const v = document.getElementById("gateInput").value.trim();
-    if (cyrb53(v) === PASS_HASH){
-      try { sessionStorage.setItem("cronoOk", String(PASS_HASH)); } catch(e){}
-      unlock();
-    } else {
+    const id = identificar(v);
+    if (id) entrar(id, v);
+    else {
       document.getElementById("gateErro").textContent = "Senha incorreta.";
       document.getElementById("gateInput").select();
     }
