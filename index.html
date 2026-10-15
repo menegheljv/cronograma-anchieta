@@ -929,7 +929,7 @@ function variarLegenda(base, n){
   if (n === 3) return junta("📌 " + titulo, frases.map(f => "▪️ " + f).join("\n"), cta, ht.join(" "));
   return junta(ab + "\n" + frases.join(" "), titulo + "\n" + cta, [...ht].reverse().join(" "));
 }
-const HORARIOS_PRONTOS = ["12:00", "18:00", "20:00"];
+const HORARIOS_PRONTOS = ["08:00", "12:00", "16:00"];
 // ---------- Arrobas prontos (para o campo Colab) ----------
 // Cada botão tem um nome (rótulo) e o arroba que ele cola no campo. A coordenação cadastra mais no painel da aba.
 const ARROBAS_BASE = [{r:"Turismo", a:"@turismoanchieta"}, {r:"Saúde", a:"@saudeanchieta"}, {r:"Educação", a:"@seme_anchieta"}, {r:"Esporte e Juventude", a:"@semej.anchieta"}, {r:"GOBEA", a:"@gobea_anchieta"}, {r:"Guarda Municipal", a:"@gcmanchieta"}, {r:"Centro dos Idosos", a:"@centrodosidosos_anchieta"}, {r:"Assistência", a:"@semads_anchieta"}];
