@@ -166,8 +166,13 @@ a.btn{text-decoration:none;display:inline-block}
 a.btn[hidden]{display:none}
 .dem{padding:14px 16px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:12px;background:#fff;display:grid;gap:6px}
 .dem h3{margin:0;font-size:16.5px;font-weight:700;overflow-wrap:anywhere}
-.dem.urgente{border-left:5px solid var(--wandinho)}
+.dem{border-left:5px solid var(--nv,var(--border))}
+.dem.urgente{--nv:var(--wandinho)}
+.dem.medio{--nv:var(--mariana)}
+.dem.leve{--nv:var(--joao)}
 .stt.urg{background:#fde7e7;color:var(--wandinho)}
+.stt.med{background:#fff1bf;color:var(--mariana-t)}
+.stt.lev{background:#e3f4e8;color:var(--joao)}
 .dem .quando{font-size:12.5px;color:var(--ink-soft)}
 .dem .linha{display:grid;grid-template-columns:170px 1fr;gap:8px;font-size:14.5px}
 .dem .k{font-weight:700;color:var(--ink-soft);font-size:13px}
@@ -1061,7 +1066,15 @@ function showTab(which){
   if (which === "dem") carregarDemandas();
 }
 // ---------- Demandas (respostas do formulário, via Apps Script) ----------
-let DEMS = [], demSoUrgentes = false;
+let DEMS = [], demNivel = null;
+const ROT_NIVEL = {urgente:["Urgente","urg"], medio:["Médio","med"], leve:["Leve","lev"]};
+// urgente = marcada "Sim" no formulário; médio = não urgente com prazo em até 7 dias (ou já vencido); leve = o resto
+function nivelDem(d){
+  if (/^sim/i.test(d.urgente)) return "urgente";
+  const pz = paraIso(d.prazo); if (!pz) return "leve";
+  const [y,m,dd] = pz.split("-").map(Number);
+  return Math.round((new Date(y, m-1, dd) - startOfToday) / 86400000) <= 7 ? "medio" : "leve";
+}
 function comLinks(el, txt){
   txt.split(/(https?:\/\/[^\s]+)/g).forEach(parte => {
     if (/^https?:\/\//.test(parte) && linkOk(parte)){
@@ -1084,21 +1097,24 @@ function renderDem(){
   const lista = document.getElementById("demList"), vazio = document.getElementById("demVazio");
   lista.textContent = "";
   const tf = document.getElementById("demFiltro"); tf.textContent = "";
-  [["Todas", false], ["Só urgentes", true]].forEach(([t,v]) => {
-    const c = h("button","chip",t); c.type = "button"; c.setAttribute("aria-pressed", String(demSoUrgentes === v));
-    c.addEventListener("click", () => { demSoUrgentes = v; renderDem(); });
+  [["Todas", null, ""], ["Urgentes", "urgente", "--wandinho"], ["Médias", "medio", "--mariana"], ["Leves", "leve", "--joao"]].forEach(([t,v,cor]) => {
+    const n = v ? DEMS.filter(d => nivelDem(d) === v).length : DEMS.length;
+    const c = h("button","chip",t); c.type = "button"; c.setAttribute("aria-pressed", String(demNivel === v));
+    if (cor) corVars(c, cor);
+    c.appendChild(h("small",null,String(n)));
+    c.addEventListener("click", () => { demNivel = v; renderDem(); });
     tf.appendChild(c);
   });
-  const itens = DEMS.filter(d => !demSoUrgentes || /^sim/i.test(d.urgente)).sort((a,b) => dataRecebida(b.ts) - dataRecebida(a.ts));
+  const itens = DEMS.filter(d => !demNivel || nivelDem(d) === demNivel).sort((a,b) => dataRecebida(b.ts) - dataRecebida(a.ts));
   document.getElementById("demCount").textContent = DEMS.length;
   vazio.hidden = itens.length > 0;
   itens.forEach(d => {
-    const urg = /^sim/i.test(d.urgente);
-    const card = h("div","dem" + (urg ? " urgente" : ""));
+    const urg = /^sim/i.test(d.urgente), nv = nivelDem(d);
+    const card = h("div","dem " + nv);
     const topo = h("div","pautatop");
     topo.appendChild(h("h3", null, (d.tipo || "Demanda") + (d.secretaria ? " · " + d.secretaria : "")));
     const ac = h("div","acoesp");
-    if (urg) ac.appendChild(h("span","stt urg","Urgente"));
+    ac.appendChild(h("span","stt " + ROT_NIVEL[nv][1], ROT_NIVEL[nv][0]));
     if (ADMIN){
       const b = h("button","btn pri","Criar pauta"); b.type = "button";
       b.addEventListener("click", () => abrirEd("criar", pautaDaDemanda(d)));
