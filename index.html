@@ -1129,13 +1129,13 @@ function cardProg(x, postada){
   else { fv.textContent = "—"; fv.classList.add("nada"); }
   const lf = h("div","linha"); lf.appendChild(h("span","k","Formato")); lf.appendChild(fv); c.appendChild(lf);
   c.appendChild(linhaPauta("Título", x.titulo, false));
-  c.appendChild(linhaPauta("Link de referência", x.link, true));
   c.appendChild(linhaPauta("Informações", String(x.obs || "").trim(), false));
   if (!semLegenda(x.formato)){   // Stories: sem legenda, horário nem colab
     c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", x.legenda || gerarLegenda(x.titulo, x.formato, x.obs), false));
     c.appendChild(linhaPauta("Horário", x.horario, false));
     c.appendChild(linhaPauta("Colab", x.colab, false));
   }
+  c.appendChild(linhaPauta("Link de referência", x.link, true));   // por último
   if (x.feitoPor) c.appendChild(h("div","feitopor","Marcada como feita por " + (x.feitoPor === "Admin" ? "João" : x.feitoPor)));
   return c;
 }
@@ -1239,13 +1239,13 @@ function pautaEl(it){
   const lf = h("div","linha"); lf.appendChild(h("span","k","Formato")); lf.appendChild(fv);
   c.appendChild(lf);
   c.appendChild(linhaPauta("Título", titulo, false));
-  c.appendChild(linhaPauta("Link de referência", link, true));
   c.appendChild(linhaPauta("Informações", info, false));
   if (it[10] || it[11] || it[12]){
     if (!semLegenda(it[7])) c.appendChild(linhaPauta("Legenda", it[10], false));
     c.appendChild(linhaPauta("Horário", it[11], false));
     c.appendChild(linhaPauta("Colab", it[12], false));
   }
+  c.appendChild(linhaPauta("Link de referência", link, true));   // por último
   return c;
 }
 function renderDia(){
