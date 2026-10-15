@@ -2,10 +2,8 @@
 // Como instalar:
 //  1) Em uma planilha do Google: Extensões > Apps Script. Cole este código.
 //  2) Em Configurações do projeto > Propriedades do script, crie:
-//       ADMIN_SENHA     = a senha do administrador
-//       SENHA_JOAO, SENHA_RENATA, SENHA_ISABELA, SENHA_MARCOS,
-//       SENHA_WANDINHO, SENHA_MARIANA, SENHA_FLAVIO = a senha de cada pessoa
-//     (as senhas ficam só aqui, nunca no código)
+//       ADMIN_SENHA = a senha do administrador (fica só aqui, nunca no código)
+//     A equipe entra só com o nome, sem senha.
 //  3) Implantar > Nova implantação > App da Web.
 //       Executar como: Eu | Quem pode acessar: Qualquer pessoa
 //  4) Copie o URL gerado e cole em SUGGEST_URL, no começo do script do index.html.
@@ -48,15 +46,13 @@ function sanear_(v) { // impede que um texto vire fórmula na planilha
   v = txt_(v);
   return /^[=+\-@]/.test(v) ? "'" + v : v;
 }
-function semAcento_(n) { return String(n).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase(); }
 function ehAdmin_(c) {
   const s = PropertiesService.getScriptProperties().getProperty('ADMIN_SENHA');
   return c.pessoa === 'Admin' && !!s && c.senha === s;
 }
-function ehPessoa_(c) {
-  if (!c.pessoa || c.pessoa === 'Admin') return false;
-  const s = PropertiesService.getScriptProperties().getProperty('SENHA_' + semAcento_(c.pessoa));
-  return !!s && c.senha === s;
+const EQUIPE = ['João', 'Renata', 'Isabela', 'Marcos', 'Wandinho', 'Mariana', 'Flávio'];
+function ehPessoa_(c) { // a equipe entra só com o nome
+  return EQUIPE.indexOf(c.pessoa) >= 0;
 }
 function dataOk_(d) { return /^\d{4}-\d{2}-\d{2}$/.test(String(d)); }
 function achar_(sh, chave) { // linha (1-based) da primeira coluna igual a chave, ou 0
@@ -90,7 +86,7 @@ function doPost(e) {
     }
 
     if (a === 'marcar') {
-      // a própria pessoa (só nas pautas dela) ou o administrador
+      // a própria pessoa (só nas pautas dela, sem senha) ou o administrador
       if (!(ehAdmin_(c) || (ehPessoa_(c) && c.pessoa === c.responsavel))) return resp_({ ok: false, erro: 'senha' });
       upsertAlteracao_(String(c.chave), { feito: !!c.feito, feitoPor: c.pessoa });
       return resp_({ ok: true });

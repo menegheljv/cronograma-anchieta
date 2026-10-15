@@ -89,6 +89,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 #gate input{font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;text-align:center}
 #gate input:focus{outline:2px solid var(--accent);border-color:var(--accent)}
 #gate button{font:inherit;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:var(--ink);color:#fff;cursor:pointer}
+#gate .linkbtn{font:inherit;font-size:13.5px;background:none;border:0;color:var(--ink-soft);text-decoration:underline;cursor:pointer;padding:2px}
 #gate .erro{color:var(--wandinho);font-size:13.5px;min-height:18px}
 .tabs{display:flex;gap:8px;margin:18px 0 0;border-bottom:1.5px solid var(--border)}
 .tab{font:inherit;font-size:15px;font-weight:700;padding:10px 16px;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;background:none;color:var(--ink-soft);cursor:pointer}
@@ -171,9 +172,10 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 <div id="gate">
   <form id="gateForm" autocomplete="off">
     <h1>Cronograma de Conteúdo</h1>
-    <p>Prefeitura de Anchieta · acesso restrito</p>
-    <input id="gateInput" type="password" placeholder="Senha" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Senha" autofocus>
+    <p id="gateSub">Prefeitura de Anchieta · digite seu nome para entrar</p>
+    <input id="gateInput" type="text" placeholder="Seu nome" autocapitalize="words" autocorrect="off" spellcheck="false" aria-label="Seu nome" autofocus>
     <button type="submit">Entrar</button>
+    <button type="button" id="gateAdm" class="linkbtn">Sou administrador</button>
     <div class="erro" id="gateErro" role="alert"></div>
   </form>
 </div>
@@ -453,7 +455,7 @@ function apiLocal(c){
   } else if (c.acao === "marcar"){
     const hs = cyrb53(c.senha || "");
     const okAdm = ADMIN && hs === ADMIN_HASH;
-    const okPes = USER && c.pessoa === USER && PESSOAS[USER] === hs && c.responsavel === USER;
+    const okPes = !!USER && c.pessoa === USER && c.responsavel === USER;
     if (!okAdm && !okPes) throw new Error("senha");
     let a = e.alteracoes.find(x => x.chave === c.chave);
     if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
@@ -871,7 +873,7 @@ function startApp(){
     ? "<b>Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
     : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar.";
   document.getElementById("admSair").addEventListener("click", () => {
-    try { sessionStorage.removeItem("cronoSenha"); } catch(e){}
+    try { sessionStorage.removeItem("cronoEntrada"); } catch(e){}
     location.reload();
   });
   let i = MONTHS.findIndex(({y,m}) => y===now.getFullYear() && m===now.getMonth());
@@ -879,12 +881,10 @@ function startApp(){
   carregarEstado();
 }
 
-// Senhas de entrada. Atenção: é só uma barreira simples no navegador, não é segurança real.
-// Cada pessoa entra com a própria senha. A senha de administrador libera editar, mover e aprovar;
-// quando há SUGGEST_URL, o servidor (Apps Script) confere essa senha de novo a cada gravação.
+// Entrada: a pessoa digita só o nome (sem senha). O administrador usa a senha dele.
+// Quando há SUGGEST_URL, o servidor (Apps Script) confere a senha do administrador a cada gravação.
 const ADMIN_HASH = 7936277791153394;
-// Senha de cada pessoa (hash). Quem entra com a própria senha marca ✓ só nas suas pautas.
-const PESSOAS = {};
+const semAcento = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 function cyrb53(str){
   let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
   for (let i=0, ch; i<str.length; i++){ ch = str.charCodeAt(i); h1 = Math.imul(h1^ch, 2654435761); h2 = Math.imul(h2^ch, 1597334677); }
@@ -892,33 +892,42 @@ function cyrb53(str){
   h2 = Math.imul(h2^(h2>>>16), 2246822507) ^ Math.imul(h1^(h1>>>13), 3266489909);
   return 4294967296 * (2097151 & h2) + (h1>>>0);
 }
-function identificar(senha){
-  const hv = cyrb53(senha);
-  if (hv === ADMIN_HASH) return {admin:true, user:null};
-  const nome = Object.keys(PESSOAS).find(n => PESSOAS[n] === hv);
-  if (nome) return {admin:false, user:nome};
-  return null;
+function identificar(entrada){
+  if (cyrb53(entrada) === ADMIN_HASH) return {admin:true, user:null};
+  const nome = Object.keys(OWNERS).find(n => n !== "A definir" && semAcento(n) === semAcento(entrada));
+  return nome ? {admin:false, user:nome} : null;
 }
-function entrar(id, senha){
-  ADMIN = id.admin; USER = id.user; SENHA = senha;
-  try { sessionStorage.setItem("cronoSenha", senha); } catch(e){}
+function entrar(id, texto){
+  ADMIN = id.admin; USER = id.user; SENHA = id.admin ? texto : "";
+  try { sessionStorage.setItem("cronoEntrada", texto); } catch(e){}
   document.getElementById("gate").hidden = true;
   document.getElementById("app").hidden = false;
   startApp();
 }
 let salva = null;
-try { salva = sessionStorage.getItem("cronoSenha"); } catch(e){}
+try { salva = sessionStorage.getItem("cronoEntrada"); } catch(e){}
 const idSalva = salva ? identificar(salva) : null;
 if (idSalva) entrar(idSalva, salva);
 else {
+  const campo = document.getElementById("gateInput");
+  document.getElementById("gateAdm").addEventListener("click", () => {
+    const adm = campo.type === "text";
+    campo.type = adm ? "password" : "text";
+    campo.placeholder = adm ? "Senha do administrador" : "Seu nome";
+    campo.setAttribute("aria-label", campo.placeholder);
+    document.getElementById("gateAdm").textContent = adm ? "Voltar: entrar com meu nome" : "Sou administrador";
+    document.getElementById("gateSub").textContent = adm ? "Prefeitura de Anchieta · acesso do administrador" : "Prefeitura de Anchieta · digite seu nome para entrar";
+    document.getElementById("gateErro").textContent = ""; campo.value = ""; campo.focus();
+  });
   document.getElementById("gateForm").addEventListener("submit", e => {
     e.preventDefault();
-    const v = document.getElementById("gateInput").value.trim();
+    const v = campo.value.trim();
     const id = identificar(v);
-    if (id) entrar(id, v);
+    const doAdm = campo.type === "password";
+    if (id && id.admin === doAdm) entrar(id, v);
     else {
-      document.getElementById("gateErro").textContent = "Senha incorreta.";
-      document.getElementById("gateInput").select();
+      document.getElementById("gateErro").textContent = doAdm ? "Senha incorreta." : "Não encontrei esse nome. Use o nome que aparece no cronograma.";
+      campo.select();
     }
   });
 }
