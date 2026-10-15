@@ -117,8 +117,8 @@ legend,.lbl{font-size:13px;font-weight:700;margin-bottom:8px;padding:0}
 .tipos span{display:block;text-align:center;padding:11px 8px;border:1.5px solid var(--border);border-radius:12px;font-weight:600;font-size:14.5px}
 .tipos input:checked+span{background:var(--ink);border-color:var(--ink);color:#fff}
 .tipos input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
-dialog input[type=url]{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px}
-dialog input[type=url]:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+dialog input[type=text],dialog input[type=url]{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px}
+dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var(--accent);border-color:var(--accent)}
 .acoes{display:flex;gap:10px;justify-content:flex-end}
 .btn{font:inherit;font-size:15px;font-weight:700;padding:11px 18px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
 .btn.pri{background:var(--ink);color:#fff}
@@ -133,9 +133,11 @@ dialog input[type=url]:focus{outline:2px solid var(--accent);border-color:var(--
 .sugitem{display:grid;grid-template-columns:110px 110px 1fr;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;background:#fff}
 .sugitem .dt{font-weight:700}
 .tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);border:1.5px solid var(--c);justify-self:start}
+.sugtxt{min-width:0}
+.sugtxt strong{display:block;font-size:15px;overflow-wrap:anywhere}
 .sugitem a{color:var(--marcos);overflow-wrap:anywhere;font-size:14px}
 .sugitem small{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}
-@media (max-width:860px){.sugitem{grid-template-columns:1fr auto;}.sugitem a{grid-column:1/-1}}
+@media (max-width:860px){.sugitem{grid-template-columns:1fr auto;}.sugtxt{grid-column:1/-1}}
 .foot{margin-top:28px;color:var(--ink-soft);font-size:13px}
 
 @media (max-width:860px){
@@ -187,7 +189,9 @@ dialog input[type=url]:focus{outline:2px solid var(--accent);border-color:var(--
 </div>
 <dialog id="dlg">
   <form id="sugForm" method="dialog">
-    <div><h2 id="dlgTitulo">Sugerir pauta</h2><p>Escolha o formato e cole um link de referência.</p></div>
+    <div><h2 id="dlgTitulo">Sugerir pauta</h2><p>Dê um título, escolha o formato e cole um link de referência.</p></div>
+    <div><label class="lbl" for="sugTitulo">Título</label>
+      <input id="sugTitulo" type="text" maxlength="120" placeholder="Ex.: Bastidores do Festival de Frutos do Mar" required autocomplete="off"></div>
     <fieldset>
       <legend>Formato</legend>
       <div class="tipos">
@@ -244,7 +248,7 @@ const OUT_2026 = [
 [13,"Dia Nacional do Fisioterapeuta e do Terapeuta Ocupacional","Renata","Card stories"],
 [13,"28º Festival Capixaba de Frutos do Mar","A definir",""],
 [14,"Gabinete em Ação em Simpatia","A definir","Pauta a confirmar"],
-[15,"Dia do Professor","A definir","Gravar vídeo"],
+[15,"Dia do Professor","Wandinho","Gravar vídeo"],
 [15,"Dia Internacional da Mulher Rural","Renata","Card stories"],
 [15,"28º Festival Capixaba de Frutos do Mar","A definir",""],
 [16,"A Semana em 1 min","João","Produzir vídeo"],
@@ -559,8 +563,11 @@ function renderSug(){
     row.appendChild(h("span","dt",fmtDia(x.data)));
     const tg = h("span","tag",x.tipo); tg.style.setProperty("--c", `var(${TIPOS[x.tipo]})`);
     row.appendChild(tg);
+    const tx = h("div","sugtxt");
+    tx.appendChild(h("strong",null,x.titulo || "(sem título)"));
     const a = h("a",null,x.link); a.href = x.link; a.target = "_blank"; a.rel = "noopener noreferrer";
-    row.appendChild(a);
+    tx.appendChild(a);
+    row.appendChild(tx);
     box.appendChild(row);
   });
 }
@@ -590,12 +597,14 @@ function initSug(){
     e.preventDefault();
     const tipo = (document.querySelector('input[name="tipo"]:checked')||{}).value;
     const link = document.getElementById("sugLink").value.trim();
+    const titulo = document.getElementById("sugTitulo").value.trim();
     const m = document.getElementById("sugMsg"), btn = document.getElementById("sugSend");
+    if (!titulo){ m.className = "msg"; m.textContent = "Escreva um título."; return; }
     if (!tipo){ m.className = "msg"; m.textContent = "Escolha o formato."; return; }
     if (!linkOk(link)){ m.className = "msg"; m.textContent = "Cole um link válido, começando com http:// ou https://"; return; }
     btn.disabled = true; m.className = "msg"; m.textContent = "Enviando...";
     try {
-      await enviarSug({id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), data:sugDia, tipo, link, criadoEm:new Date().toISOString()});
+      await enviarSug({id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), data:sugDia, titulo:titulo.slice(0,120), tipo, link, criadoEm:new Date().toISOString()});
       m.className = "msg ok"; m.textContent = "Sugestão enviada. Obrigado!";
       await carregarSug();
       setTimeout(() => document.getElementById("dlg").close(), 900);
