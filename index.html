@@ -166,6 +166,8 @@ a.btn{text-decoration:none;display:inline-block}
 a.btn[hidden]{display:none}
 .dem{padding:14px 16px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:12px;background:#fff;display:grid;gap:6px}
 .dem h3{margin:0;font-size:16.5px;font-weight:700;overflow-wrap:anywhere}
+.dem.urgente{border-left:5px solid var(--wandinho)}
+.stt.urg{background:#fde7e7;color:var(--wandinho)}
 .dem .quando{font-size:12.5px;color:var(--ink-soft)}
 .dem .linha{display:grid;grid-template-columns:170px 1fr;gap:8px;font-size:14.5px}
 .dem .k{font-weight:700;color:var(--ink-soft);font-size:13px}
@@ -245,6 +247,7 @@ a.btn[hidden]{display:none}
     <p class="aviso" id="avisoDem" hidden></p>
     <div class="sughead"><h2>Demandas recebidas</h2>
       <div class="sugacoes"><a class="btn pri" id="demNova" target="_blank" rel="noopener noreferrer" hidden>Enviar demanda</a><button class="btn" id="demRefresh" type="button">Atualizar</button></div></div>
+    <div class="tfilt" id="demFiltro"></div>
     <div id="demList"></div>
     <p class="vazio" id="demVazio" hidden>Nenhuma demanda recebida ainda.</p>
   </section>
@@ -318,9 +321,9 @@ a.btn[hidden]{display:none}
 <script>
 // Endereço do Apps Script (veja apps-script.gs). Vazio = modo de teste, salva só neste navegador.
 const SUGGEST_URL = "";
-// Aba Demandas: respostas do Google Forms. DEMANDAS_CSV = link "Publicar na Web" (CSV) da planilha de respostas;
-// DEMANDAS_FORM = link público do formulário (botão "Enviar demanda"). Vazio = ainda não conectado.
-const DEMANDAS_CSV = "";
+// Aba Demandas: vem do mesmo Apps Script (SUGGEST_URL), que lê a planilha de respostas do Google Forms
+// e entrega só os campos seguros (sem e-mail, telefone ou anexos).
+// DEMANDAS_FORM = link público do formulário (botão "Enviar demanda"). Vazio = botão oculto.
 const DEMANDAS_FORM = "";
 const OWNERS = {
   "João":"--joao","Renata":"--renata","Isabela":"--isabela","Marcos":"--marcos",
@@ -1057,24 +1060,8 @@ function showTab(which){
   if (which === "sug") carregarEstado();
   if (which === "dem") carregarDemandas();
 }
-// ---------- Demandas (respostas do Google Forms) ----------
-function lerCSV(t){
-  const linhas = []; let l = [], c = "", asp = false;
-  for (let i=0; i<t.length; i++){
-    const ch = t[i];
-    if (asp){
-      if (ch === '"'){ if (t[i+1] === '"'){ c += '"'; i++; } else asp = false; }
-      else c += ch;
-    } else if (ch === '"') asp = true;
-    else if (ch === ","){ l.push(c); c = ""; }
-    else if (ch === "\n" || ch === "\r"){
-      if (ch === "\r" && t[i+1] === "\n") i++;
-      l.push(c); c = ""; if (l.some(x => x !== "")) linhas.push(l); l = [];
-    } else c += ch;
-  }
-  l.push(c); if (l.some(x => x !== "")) linhas.push(l);
-  return linhas;
-}
+// ---------- Demandas (respostas do formulário, via Apps Script) ----------
+let DEMS = [], demSoUrgentes = false;
 function comLinks(el, txt){
   txt.split(/(https?:\/\/[^\s]+)/g).forEach(parte => {
     if (/^https?:\/\//.test(parte) && linkOk(parte)){
@@ -1082,41 +1069,69 @@ function comLinks(el, txt){
     } else if (parte) el.appendChild(document.createTextNode(parte));
   });
 }
-async function carregarDemandas(){
-  const aviso = document.getElementById("avisoDem"), lista = document.getElementById("demList"), vazio = document.getElementById("demVazio");
-  const nova = document.getElementById("demNova");
-  if (DEMANDAS_FORM && linkOk(DEMANDAS_FORM)){ nova.href = DEMANDAS_FORM; nova.hidden = false; }
-  lista.textContent = ""; vazio.hidden = true; aviso.hidden = true;
-  if (!DEMANDAS_CSV){
-    aviso.hidden = false;
-    aviso.textContent = "As demandas ainda não estão conectadas ao formulário. Falta publicar a planilha de respostas e colocar o link no site.";
-    return;
-  }
-  let linhas = [];
-  try {
-    const r = await fetch(DEMANDAS_CSV, {cache:"no-store"});
-    if (!r.ok) throw new Error("http " + r.status);
-    linhas = lerCSV(await r.text());
-  } catch(e){
-    aviso.hidden = false; aviso.textContent = "Não consegui carregar as demandas agora. Tente atualizar em instantes."; return;
-  }
-  const cab = linhas[0] || [], dados = linhas.slice(1).reverse(); // mais recentes primeiro
-  document.getElementById("demCount").textContent = dados.length;
-  vazio.hidden = dados.length > 0;
-  const ehData = k => /carimbo|timestamp|data\/hora/i.test(k);
-  dados.forEach(r => {
-    const card = h("div","dem");
-    const iData = cab.findIndex(ehData);
-    const campos = cab.map((k,i) => [k, (r[i] || "").trim(), i]).filter(x => x[1] && !ehData(x[0]));
-    if (!campos.length) return;
-    card.appendChild(h("h3", null, campos[0][1]));
-    if (iData >= 0 && r[iData]) card.appendChild(h("div","quando","Recebida em " + r[iData]));
-    campos.slice(1).forEach(([k,v]) => {
+const paraIso = br => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(br || ""); return m ? m[3] + "-" + pad2(+m[2]) + "-" + pad2(+m[1]) : ""; };
+function dataRecebida(br){ const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d+):(\d+):(\d+))?/.exec(br || ""); return m ? new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0), +(m[6]||0)).getTime() : 0; }
+function pautaDaDemanda(d){
+  // sugestão de pauta a partir da demanda: o administrador revisa e salva
+  const prazo = paraIso(d.prazo), hoje = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const hojeIso = hoje.getFullYear() + "-" + pad2(hoje.getMonth()+1) + "-" + pad2(hoje.getDate());
+  let data = prazo >= hojeIso && prazo >= "2026-10-01" && prazo <= "2027-12-31" ? prazo : (hojeIso < "2026-10-01" ? "2026-10-01" : hojeIso);
+  const formato = inferirFormato(d.tipo + " " + d.formato, "");
+  const info = ["Demanda de " + (d.secretaria || "—") + (d.solicitante ? " (" + d.solicitante + ")" : ""), d.objetivo && ("Objetivo: " + d.objetivo), d.info && ("Informações: " + d.info), d.prazo && ("Prazo desejado: " + d.prazo)].filter(Boolean).join(". ").slice(0, 300);
+  return {titulo:(d.tipo || "Demanda").slice(0,160) + (d.secretaria ? " · " + d.secretaria : ""), owner:"A definir", data, obs:info, formato};
+}
+function renderDem(){
+  const lista = document.getElementById("demList"), vazio = document.getElementById("demVazio");
+  lista.textContent = "";
+  const tf = document.getElementById("demFiltro"); tf.textContent = "";
+  [["Todas", false], ["Só urgentes", true]].forEach(([t,v]) => {
+    const c = h("button","chip",t); c.type = "button"; c.setAttribute("aria-pressed", String(demSoUrgentes === v));
+    c.addEventListener("click", () => { demSoUrgentes = v; renderDem(); });
+    tf.appendChild(c);
+  });
+  const itens = DEMS.filter(d => !demSoUrgentes || /^sim/i.test(d.urgente)).sort((a,b) => dataRecebida(b.ts) - dataRecebida(a.ts));
+  document.getElementById("demCount").textContent = DEMS.length;
+  vazio.hidden = itens.length > 0;
+  itens.forEach(d => {
+    const urg = /^sim/i.test(d.urgente);
+    const card = h("div","dem" + (urg ? " urgente" : ""));
+    const topo = h("div","pautatop");
+    topo.appendChild(h("h3", null, (d.tipo || "Demanda") + (d.secretaria ? " · " + d.secretaria : "")));
+    const ac = h("div","acoesp");
+    if (urg) ac.appendChild(h("span","stt urg","Urgente"));
+    if (ADMIN){
+      const b = h("button","btn pri","Criar pauta"); b.type = "button";
+      b.addEventListener("click", () => abrirEd("criar", pautaDaDemanda(d)));
+      ac.appendChild(b);
+    }
+    topo.appendChild(ac); card.appendChild(topo);
+    card.appendChild(h("div","quando","Recebida em " + (d.ts || "—") + (d.solicitante ? " · por " + d.solicitante : "")));
+    [["Objetivo", d.objetivo], ["Formato desejado", d.formato], ["Prazo desejado", d.prazo], ["Informações para produção", d.info], ["Justificativa da urgência", urg ? d.justif : ""], ["Anexos", d.anexos ? d.anexos + (d.anexos > 1 ? " arquivos enviados" : " arquivo enviado") + " (abrir na planilha)" : ""]].forEach(([k,v]) => {
+      if (!v || v === "." || v === "--" || v === "\\--") return;
       const l = h("div","linha"); l.appendChild(h("span","k",k));
       const vv = h("span","v"); comLinks(vv, v); l.appendChild(vv); card.appendChild(l);
     });
     lista.appendChild(card);
   });
+}
+async function carregarDemandas(){
+  const aviso = document.getElementById("avisoDem"), nova = document.getElementById("demNova");
+  if (DEMANDAS_FORM && linkOk(DEMANDAS_FORM)){ nova.href = DEMANDAS_FORM; nova.hidden = false; }
+  aviso.hidden = true;
+  if (!SUGGEST_URL){
+    aviso.hidden = false;
+    aviso.textContent = "As demandas ainda não estão conectadas. Falta publicar o Apps Script e colocar o endereço dele no site.";
+    DEMS = []; renderDem(); return;
+  }
+  try {
+    const r = await fetch(SUGGEST_URL + "?acao=demandas", {cache:"no-store"});
+    const j = await r.json();
+    DEMS = Array.isArray(j.demandas) ? j.demandas : [];
+    if (j.erro){ aviso.hidden = false; aviso.textContent = "O script não conseguiu abrir a planilha de respostas. Confirme que a conta que publicou o script tem acesso a ela."; }
+  } catch(e){
+    DEMS = []; aviso.hidden = false; aviso.textContent = "Não consegui carregar as demandas agora. Tente atualizar em instantes.";
+  }
+  renderDem();
 }
 function initDia(){
   document.getElementById("diaFechar").addEventListener("click", () => document.getElementById("dlgDia").close());

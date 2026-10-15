@@ -9,6 +9,9 @@
 //  4) Copie o URL gerado e cole em SUGGEST_URL, no começo do script do index.html.
 
 const TIPOS = ['Vídeo', 'Carrossel', 'Card', 'Stories'];
+// Planilha de respostas do formulário de demandas. A conta que publica este script precisa ter acesso a ela.
+const DEMANDAS_PLANILHA = '1KUYV7CNIi0U2AjwB4ibu13Mv78am1W3hesGJuip53ww';
+const DEMANDAS_ABA = 'Respostas ao formulário 1';
 const ESQUEMA = {
   Sugestoes:   ['id', 'data', 'tipo', 'titulo', 'link', 'criadoEm', 'status', 'info'],
   Pautas:      ['id', 'data', 'titulo', 'responsavel', 'obs', 'sugestaoId', 'formato', 'link'],
@@ -126,6 +129,33 @@ function doPost(e) {
   }
 }
 
-function doGet() {
+// Só entrega campos seguros das demandas: e-mail, telefone e anexos NÃO saem da planilha.
+function demandas_() {
+  const sh = SpreadsheetApp.openById(DEMANDAS_PLANILHA).getSheetByName(DEMANDAS_ABA);
+  if (!sh) return [];
+  const v = sh.getDataRange().getValues();
+  const norm = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const cab = v[0].map(norm);
+  const col = pref => cab.findIndex(c => c.indexOf(norm(pref)) === 0);
+  const idx = {
+    ts: col('carimbo'), secretaria: col('secretaria'), solicitante: col('nome do solicitante'),
+    tipo: col('tipo de material'), objetivo: col('objetivo da'), formato: col('formato desejado'),
+    prazo: col('prazo desejado'), info: col('informacoes necessarias'), urgente: col('a demanda e urgente'),
+    justif: col('se "sim"'), anexos: col('anexar')
+  };
+  const t = (r, k) => idx[k] < 0 ? '' : (r[idx[k]] instanceof Date ? Utilities.formatDate(r[idx[k]], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss') : String(r[idx[k]] === null ? '' : r[idx[k]]).trim());
+  return v.slice(1).filter(r => t(r, 'ts') || t(r, 'tipo')).map((r, i) => ({
+    id: String(i + 2), ts: t(r, 'ts'), secretaria: t(r, 'secretaria'), solicitante: t(r, 'solicitante'),
+    tipo: t(r, 'tipo'), objetivo: t(r, 'objetivo'), formato: t(r, 'formato'), prazo: t(r, 'prazo'),
+    info: t(r, 'info'), urgente: t(r, 'urgente'), justif: t(r, 'justif'),
+    anexos: t(r, 'anexos') ? t(r, 'anexos').split(',').length : 0
+  }));
+}
+
+function doGet(e) {
+  if (e && e.parameter && e.parameter.acao === 'demandas') {
+    try { return resp_({ demandas: demandas_() }); }
+    catch (err) { return resp_({ demandas: [], erro: String(err) }); }
+  }
   return resp_({ sugestoes: ler_('Sugestoes'), extras: ler_('Pautas'), alteracoes: ler_('Alteracoes') });
 }
