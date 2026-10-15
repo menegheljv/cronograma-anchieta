@@ -905,7 +905,7 @@ function variarLegenda(base, n){
 }
 // ---------- Arrobas prontos (para o campo Colab) ----------
 // Cada botão tem um nome (rótulo) e o arroba que ele cola no campo. A coordenação cadastra mais no painel da aba.
-const ARROBAS_BASE = [{r:"Turismo", a:"@turismoanchieta"}, {r:"Saúde", a:"@saudeanchieta"}, {r:"Educação", a:"@seme_anchieta"}, {r:"Esporte e Juventude", a:"@semej.anchieta"}, {r:"GOBEA", a:"@gobea_anchieta"}, {r:"Guarda Municipal", a:"@gcmanchieta"}];
+const ARROBAS_BASE = [{r:"Turismo", a:"@turismoanchieta"}, {r:"Saúde", a:"@saudeanchieta"}, {r:"Educação", a:"@seme_anchieta"}, {r:"Esporte e Juventude", a:"@semej.anchieta"}, {r:"GOBEA", a:"@gobea_anchieta"}, {r:"Guarda Municipal", a:"@gcmanchieta"}, {r:"Centro dos Idosos", a:"@centrodosidosos_anchieta"}];
 const normArroba = a => { a = String(a || "").trim().toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9._]/g, ""); return a ? "@" + a : ""; };
 const limpaRotulo = r => String(r || "").replace(/[;=]/g, " ").replace(/\s+/g, " ").trim().slice(0, 30);
 function arrobasCustom(){
