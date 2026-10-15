@@ -321,7 +321,7 @@ html,body{overflow-x:hidden}
   </section>
   <section id="vLeg" hidden>
     <div class="sughead"><h2>Dados de postagem</h2></div>
-    <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida, com outras opções para clicar. Você pode editar de novo quando quiser, até a pauta ser programada.</p>
+    <p class="aviso-leve">Para marcar ✓ numa pauta é preciso escolher a <b>legenda</b>, o <b>horário</b> e o <b>colab</b> (ou <b>Sem colab</b>). Os dados aparecem aqui, e você pode editar de novo quando quiser, até a pauta ser programada.</p>
     <div class="tfilt" id="legFiltro"></div>
     <p class="vazio" id="legVazio" hidden>Nada por aqui. Quando uma pauta receber ✓, ela aparece nesta aba até ser programada ou postada.</p>
     <div id="legLista"></div>
@@ -941,11 +941,110 @@ async function salvarArrobas(lista, atualizarTela = true){
   await post({acao:"alterar", chave:"cfg:arrobas", obs:lista.map(x => x.r + "=" + x.a).join(";") || " "});
   if (atualizarTela) await carregarEstado();
 }
-const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
+const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario && x.colab);
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
 const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
 const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso() && !semLegenda(x.formato));   // Stories não passa por aqui: vai direto para Programar
 const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
+// Formulário de legenda, horário e colab. opc.marcar: só marca ✓ depois de salvar tudo; opc.aoSalvar/aoCancelar: o que fazer depois.
+function formDados(c, x, opc = {}){
+  const ok = h("span","salvo");
+  const sugerida = gerarLegenda(x.titulo, x.formato, x.obs);
+  const sem = semLegenda(x.formato);
+  const ta = h("textarea"); ta.maxLength = 2200; ta.value = sem ? "" : (x.legenda || sugerida); ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
+  const cont = h("div","cont", ta.value.length + "/2200");
+  if (sem){ c.appendChild(h("div","auto","Stories não leva legenda: preencha só o horário.")); }
+  else {
+    c.appendChild(h("span","rot","Legenda"));
+    if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
+    c.appendChild(ta); c.appendChild(cont);
+    // várias opções de legenda: é só clicar para usar
+    c.appendChild(h("span","rot","Outras opções de legenda (clique para usar)"));
+    const ops = h("div","opcoes");
+    [0,1,2,3,4].forEach(n => {
+      const txt = variarLegenda(sugerida, n);
+      const o = h("button","opcao"); o.type = "button";
+      o.appendChild(h("b",null,n ? "Opção " + (n + 1) : "Opção 1 (original)"));
+      o.appendChild(h("span",null,txt.split("\n\n#")[0]));
+      o.addEventListener("click", () => {
+        ta.value = txt; legSujo = true; ok.textContent = "Opção " + (n + 1) + " escolhida. Salve para guardar."; cont.textContent = ta.value.length + "/2200";
+        ops.querySelectorAll(".opcao").forEach(z => z.setAttribute("aria-pressed", String(z === o)));
+      });
+      ops.appendChild(o);
+    });
+    c.appendChild(ops);
+  }
+  const g = h("div","campos");
+  const w1 = h("div"); w1.appendChild(h("span","rot","Horário da postagem"));
+  const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
+  const hs = h("div","arrobas-chips");
+  HORARIOS_PRONTOS.forEach(t => {
+    const b = h("button","arr",t); b.type = "button";
+    b.addEventListener("click", () => { hr.value = t; legSujo = true; ok.textContent = ""; });
+    hs.appendChild(b);
+  });
+  w1.appendChild(hs);
+  const w2 = h("div"); w2.appendChild(h("span","rot","Colab (perfil que divide o post)"));
+  const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
+  const chips = h("div","arrobas-chips");
+  const SEM = "Sem colab";
+  const atual = () => co.value.trim() === SEM ? [] : co.value.split(/[\s,]+/).map(normArroba).filter(Boolean);
+  const semBtn = h("button","arr",SEM); semBtn.type = "button";
+  const pintar = () => { chips.querySelectorAll(".arr[data-a]").forEach(b => b.setAttribute("aria-pressed", String(atual().includes(b.dataset.a)))); semBtn.setAttribute("aria-pressed", String(co.value.trim() === SEM)); };
+  semBtn.addEventListener("click", () => { co.value = co.value.trim() === SEM ? "" : SEM; legSujo = true; ok.textContent = ""; pintar(); });
+  arrobasProntos().forEach(x => {
+    const a = x.a;
+    const b = h("button","arr", x.r); b.type = "button"; b.dataset.a = a; b.title = a;
+    b.addEventListener("click", () => {
+      const l = atual();
+      co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", ");
+      legSujo = true; ok.textContent = ""; pintar();
+    });
+    chips.appendChild(b);
+  });
+  chips.insertBefore(semBtn, chips.firstChild);
+  co.addEventListener("input", pintar);
+  if (ADMIN){
+    // só o administrador cadastra novos botões (aqui embaixo, junto dos botões)
+    const nome = h("input"); nome.type = "text"; nome.placeholder = "Nome do botão"; nome.maxLength = 30; nome.setAttribute("aria-label","Nome do novo botão");
+    const novo = h("input"); novo.type = "text"; novo.placeholder = "@perfil"; novo.maxLength = 40; novo.autocapitalize = "off"; novo.setAttribute("aria-label","Arroba do novo botão");
+    const mais = h("button","btn","+ Adicionar botão"); mais.type = "button";
+    const form = h("div","arrobas-add"); form.appendChild(nome); form.appendChild(novo); form.appendChild(mais);
+    mais.addEventListener("click", async () => {
+      const a = normArroba(novo.value); if (!a) return;
+      try {
+        await salvarArrobas([...arrobasCustom().filter(z => z.a !== a), {r:limpaRotulo(nome.value) || a, a}], false);
+        const b = h("button","arr", limpaRotulo(nome.value) || a); b.type = "button"; b.dataset.a = a; b.title = a;
+        b.addEventListener("click", () => { const l = atual(); co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", "); legSujo = true; pintar(); });
+        chips.appendChild(b); nome.value = ""; novo.value = "";
+      } catch(err){ alert(msgErro(err)); }
+    });
+    w2.appendChild(chips); w2.appendChild(form);
+  } else w2.appendChild(chips);
+  g.appendChild(w1); if (!sem) g.appendChild(w2); c.appendChild(g);
+  const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : (opc.marcar ? "Salvar e marcar como feita" : "Salvar")); sv.type = "button";
+  bt.appendChild(sv);
+  if (dadosPreenchidos(x) || opc.aoCancelar){
+    const cn = h("button","btn","Cancelar"); cn.type = "button";
+    cn.addEventListener("click", () => { if (opc.aoCancelar) return opc.aoCancelar(); editandoLeg.delete(x.id); legSujo = false; renderLeg(); });
+    bt.appendChild(cn);
+  }
+  bt.appendChild(ok); c.appendChild(bt);
+  const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
+  [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
+  sv.addEventListener("click", async () => {
+    if (!sem && !ta.value.trim()){ ok.textContent = "Escolha ou escreva a legenda."; ta.focus(); return; }
+    if (!hr.value){ ok.textContent = "Escolha o horário."; hr.focus(); return; }
+    if (!sem && !co.value.trim()){ ok.textContent = "Escolha o colab ou clique em Sem colab."; co.focus(); return; }
+    sv.disabled = true; ok.textContent = "Salvando...";
+    try {
+      await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:sem ? " " : (co.value.trim() || " ")});
+      if (opc.marcar) await post({acao:"marcar", chave:x.id, feito:true, responsavel:x.owner});
+      editandoLeg.delete(x.id); legSujo = false; await carregarEstado();
+      if (opc.aoSalvar) opc.aoSalvar();
+    } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
+  });
+}
 function renderLeg(){
   const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
   const fl = document.getElementById("legFiltro"); fl.textContent = "";
@@ -994,92 +1093,7 @@ function renderLeg(){
       g.appendChild(a1); g.appendChild(a2); c.appendChild(g);
       lista.appendChild(c); return;
     }
-    const sem = semLegenda(x.formato);
-    const ta = h("textarea"); ta.maxLength = 2200; ta.value = sem ? "" : (x.legenda || sugerida); ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
-    const cont = h("div","cont", ta.value.length + "/2200");
-    if (sem){ c.appendChild(h("div","auto","Stories não leva legenda: preencha só o horário.")); }
-    else {
-      c.appendChild(h("span","rot","Legenda"));
-      if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
-      c.appendChild(ta); c.appendChild(cont);
-      // várias opções de legenda: é só clicar para usar
-      c.appendChild(h("span","rot","Outras opções de legenda (clique para usar)"));
-      const ops = h("div","opcoes");
-      [0,1,2,3,4].forEach(n => {
-        const txt = variarLegenda(sugerida, n);
-        const o = h("button","opcao"); o.type = "button";
-        o.appendChild(h("b",null,n ? "Opção " + (n + 1) : "Opção 1 (original)"));
-        o.appendChild(h("span",null,txt.split("\n\n#")[0]));
-        o.addEventListener("click", () => {
-          ta.value = txt; legSujo = true; ok.textContent = "Opção " + (n + 1) + " escolhida. Salve para guardar."; cont.textContent = ta.value.length + "/2200";
-          ops.querySelectorAll(".opcao").forEach(z => z.setAttribute("aria-pressed", String(z === o)));
-        });
-        ops.appendChild(o);
-      });
-      c.appendChild(ops);
-    }
-    const g = h("div","campos");
-    const w1 = h("div"); w1.appendChild(h("span","rot","Horário da postagem"));
-    const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
-    const hs = h("div","arrobas-chips");
-    HORARIOS_PRONTOS.forEach(t => {
-      const b = h("button","arr",t); b.type = "button";
-      b.addEventListener("click", () => { hr.value = t; legSujo = true; ok.textContent = ""; });
-      hs.appendChild(b);
-    });
-    w1.appendChild(hs);
-    const w2 = h("div"); w2.appendChild(h("span","rot","Colab (perfil que divide o post)"));
-    const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
-    const chips = h("div","arrobas-chips");
-    const atual = () => co.value.split(/[\s,]+/).map(normArroba).filter(Boolean);
-    const pintar = () => chips.querySelectorAll(".arr").forEach(b => b.setAttribute("aria-pressed", String(atual().includes(b.dataset.a))));
-    arrobasProntos().forEach(x => {
-      const a = x.a;
-      const b = h("button","arr", x.r); b.type = "button"; b.dataset.a = a; b.title = a;
-      b.addEventListener("click", () => {
-        const l = atual();
-        co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", ");
-        legSujo = true; ok.textContent = ""; pintar();
-      });
-      chips.appendChild(b);
-    });
-    co.addEventListener("input", pintar);
-    if (ADMIN){
-      // só o administrador cadastra novos botões (aqui embaixo, junto dos botões)
-      const nome = h("input"); nome.type = "text"; nome.placeholder = "Nome do botão"; nome.maxLength = 30; nome.setAttribute("aria-label","Nome do novo botão");
-      const novo = h("input"); novo.type = "text"; novo.placeholder = "@perfil"; novo.maxLength = 40; novo.autocapitalize = "off"; novo.setAttribute("aria-label","Arroba do novo botão");
-      const mais = h("button","btn","+ Adicionar botão"); mais.type = "button";
-      const form = h("div","arrobas-add"); form.appendChild(nome); form.appendChild(novo); form.appendChild(mais);
-      mais.addEventListener("click", async () => {
-        const a = normArroba(novo.value); if (!a) return;
-        try {
-          await salvarArrobas([...arrobasCustom().filter(z => z.a !== a), {r:limpaRotulo(nome.value) || a, a}], false);
-          const b = h("button","arr", limpaRotulo(nome.value) || a); b.type = "button"; b.dataset.a = a; b.title = a;
-          b.addEventListener("click", () => { const l = atual(); co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", "); legSujo = true; pintar(); });
-          chips.appendChild(b); nome.value = ""; novo.value = "";
-        } catch(err){ alert(msgErro(err)); }
-      });
-      w2.appendChild(chips); w2.appendChild(form);
-    } else w2.appendChild(chips);
-    g.appendChild(w1); if (!sem) g.appendChild(w2); c.appendChild(g);
-    const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
-    bt.appendChild(sv);
-    if (dadosPreenchidos(x)){
-      const cn = h("button","btn","Cancelar"); cn.type = "button";
-      cn.addEventListener("click", () => { editandoLeg.delete(x.id); legSujo = false; renderLeg(); });
-      bt.appendChild(cn);
-    }
-    bt.appendChild(ok); c.appendChild(bt);
-    const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
-    [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
-    sv.addEventListener("click", async () => {
-      if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
-      sv.disabled = true; ok.textContent = "Salvando...";
-      try {
-        await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:sem ? " " : (co.value.trim() || " ")});
-        editandoLeg.delete(x.id); legSujo = false; await carregarEstado();
-      } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
-    });
+    formDados(c, x);
     lista.appendChild(c);
   });
 }
@@ -1187,15 +1201,20 @@ function itemEl(it, withNote){
   }
   return n;
 }
+let formCheckId = "";   // pauta que está pedindo legenda/horário/colab antes do ✓
 async function alternarFeito(it){
+  if (!it[6]){
+    const x = {id:it[4], data:isoDia(it[0]), titulo:it[1], owner:it[2], obs:it[3], formato:it[7], legenda:it[10] || "", horario:it[11] || "", colab:it[12] || ""};
+    if (!semLegenda(x.formato) && !dadosPreenchidos(x)){
+      // sem legenda, horário e colab escolhidos a pessoa não pode dar o check
+      formCheckId = x.id;
+      if (!document.getElementById("dlgDia").open) abrirDia(it[0]); else renderDia();
+      return;
+    }
+  }
   try {
     await post({acao:"marcar", chave:it[4], feito:!it[6], responsavel:it[2]});
     await carregarEstado();
-    // pauta concluída pela própria pessoa: leva direto para preencher os dados de postagem
-    if (!it[6] && USER && it[2] === USER){
-      const dlg = document.getElementById("dlgDia"); if (dlg.open) dlg.close();
-      showTab("leg"); window.scrollTo({top:0, behavior:"smooth"});
-    }
   }
   catch(err){ alert(msgErro(err)); }
 }
@@ -1248,6 +1267,13 @@ function pautaEl(it){
     c.appendChild(linhaPauta("Colab", it[12], false));
   }
   c.appendChild(linhaPauta("Link de referência", link, true));   // por último
+  if (formCheckId === it[4] && !feito){
+    const x = {id:it[4], data:isoDia(it[0]), titulo, owner, obs:info, formato, legenda:it[10] || "", horario:it[11] || "", colab:it[12] || ""};
+    const f = h("div","pedirdados"); f.appendChild(h("div","auto","Antes do ✓: escolha a legenda, o horário e o colab."));
+    formDados(f, x, {marcar:true, aoCancelar:() => { formCheckId = ""; renderDia(); },
+      aoSalvar:() => { formCheckId = ""; const dlg = document.getElementById("dlgDia"); if (dlg.open) dlg.close(); renderDia(); }});
+    c.appendChild(f);
+  }
   return c;
 }
 function renderDia(){
@@ -1399,7 +1425,7 @@ function atualizar(){
   renderDem();
   contador("legCount", pendentesDados().length);
   if (!document.getElementById("vLeg").hidden && !legSujo) renderLeg();
-  if (document.getElementById("dlgDia").open) renderDia();
+  if (document.getElementById("dlgDia").open && !formCheckId) renderDia();
 }
 function buildMonths(){
   const box = document.getElementById("months");
@@ -1666,6 +1692,7 @@ async function carregarDemandas(){
   renderDem();
 }
 function initDia(){
+  document.getElementById("dlgDia").addEventListener("close", () => { formCheckId = ""; });
   document.getElementById("diaFechar").addEventListener("click", () => document.getElementById("dlgDia").close());
   document.getElementById("diaNovo").addEventListener("click", () => {
     const d = diaAberto;
