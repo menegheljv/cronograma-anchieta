@@ -1695,7 +1695,7 @@ function renderDem(){
     }
     topo.appendChild(ac); card.appendChild(topo);
     card.appendChild(h("div","quando","Recebida em " + (d.ts || "—") + (d.solicitante ? " · por " + d.solicitante : "")));
-    [["Objetivo", d.objetivo], ["Formato desejado", d.formato], ["Prazo desejado", d.prazo], ["Informações para produção", d.info], ["Justificativa da urgência", urg ? d.justif : ""], ["Arquivos enviados", (d.arquivos && d.arquivos.length) ? d.arquivos.map((u,i) => "Arquivo " + (i+1) + ": " + u).join("\n") : (d.anexos ? d.anexos + (d.anexos > 1 ? " arquivos enviados" : " arquivo enviado") + " (abrir na planilha)" : "")]].forEach(([k,v]) => {
+    [["Contato do solicitante", (ADMIN || USER) ? d.contato : ""], ["Objetivo", d.objetivo], ["Formato desejado", d.formato], ["Prazo desejado", d.prazo], ["Informações para produção", d.info], ["Justificativa da urgência", urg ? d.justif : ""], ["Arquivos enviados", (d.arquivos && d.arquivos.length) ? d.arquivos.map((u,i) => "Arquivo " + (i+1) + ": " + u).join("\n") : (d.anexos ? d.anexos + (d.anexos > 1 ? " arquivos enviados" : " arquivo enviado") + " (abrir na planilha)" : "")]].forEach(([k,v]) => {
       if (!v || v === "." || v === "--" || v === "\\--") return;
       const l = h("div","linha"); l.appendChild(h("span","k",k));
       const vv = h("span","v"); comLinks(vv, v); l.appendChild(vv); card.appendChild(l);
@@ -1714,6 +1714,9 @@ async function carregarDemandas(){
     const r = await fetch(SUGGEST_URL + "?acao=demandas", {cache:"no-store"});
     const j = await r.json();
     DEMS = (Array.isArray(j.demandas) ? j.demandas : []).filter(desdeData);
+    if ((ADMIN || USER) && !j.erro){   // o contato só vem para quem entrou (equipe ou administrador)
+      try { const c = await post({acao:"contatos"}); DEMS.forEach(d => { if (c.contatos && c.contatos[d.id]) d.contato = c.contatos[d.id]; }); } catch(x){}
+    }
     if (j.erro){ aviso.hidden = false; aviso.textContent = "O script não conseguiu abrir a planilha de respostas. Confirme que a conta que publicou o script tem acesso a ela."; }
   } catch(e){
     DEMS = []; aviso.hidden = false; aviso.textContent = "Não consegui carregar as demandas agora. Tente atualizar em instantes.";

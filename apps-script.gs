@@ -90,6 +90,11 @@ function doPost(e) {
       return resp_({ ok: true });
     }
 
+    if (a === 'contatos') {
+      if (!(ehAdmin_(c) || ehPessoa_(c))) return resp_({ ok: false, erro: 'senha' });
+      try { return resp_({ ok: true, contatos: contatos_() }); } catch (err) { return resp_({ ok: true, contatos: {} }); }
+    }
+
     if (a === 'detalhar') {
       // legenda, horário e colab: o administrador ou a própria pessoa (só nas pautas dela, sem senha)
       if (!(ehAdmin_(c) || (ehPessoa_(c) && c.pessoa === c.responsavel))) return resp_({ ok: false, erro: 'senha' });
@@ -152,7 +157,7 @@ function demandas_() {
     ts: col('carimbo'), secretaria: col('secretaria'), solicitante: col('nome do solicitante'),
     tipo: col('tipo de material'), objetivo: col('objetivo da'), formato: col('formato desejado'),
     prazo: col('prazo desejado'), info: col('informacoes necessarias'), urgente: col('a demanda e urgente'),
-    justif: col('se "sim"'), anexos: col('anexar')
+    justif: col('se "sim"'), anexos: col('anexar'), contato: col('contato do solicitante')
   };
   const t = (r, k) => idx[k] < 0 ? '' : (r[idx[k]] instanceof Date ? Utilities.formatDate(r[idx[k]], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss') : String(r[idx[k]] === null ? '' : r[idx[k]]).trim());
   return v.slice(1).filter(r => t(r, 'ts') || t(r, 'tipo')).map((r, i) => ({
@@ -162,6 +167,19 @@ function demandas_() {
     arquivos: (t(r, 'anexos').match(/https:\/\/(?:drive|docs)\.google\.com\/[^\s,]+/g) || []).slice(0, 10),
     anexos: t(r, 'anexos') ? t(r, 'anexos').split(',').length : 0
   }));
+}
+
+// Contato (telefone ou e-mail) de quem pediu: só sai para a equipe (nome) ou para o administrador, nunca pela leitura pública.
+function contatos_() {
+  const sh = SpreadsheetApp.openById(DEMANDAS_PLANILHA).getSheetByName(DEMANDAS_ABA);
+  if (!sh) return {};
+  const v = sh.getDataRange().getValues();
+  const norm = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const i = v[0].map(norm).findIndex(c => c.indexOf('contato do solicitante') === 0);
+  const o = {};
+  if (i < 0) return o;
+  v.slice(1).forEach((r, k) => { const t = String(r[i] === null ? '' : r[i]).trim(); if (t) o[String(k + 2)] = t.slice(0, 120); });
+  return o;
 }
 
 function doGet(e) {
