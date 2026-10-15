@@ -287,8 +287,8 @@ html,body{overflow-x:hidden}
   </div>
   <div class="tabs" role="tablist">
     <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
-    <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount" hidden>0</small></button>
     <button class="tab" id="tabLeg" role="tab" aria-selected="false" type="button"><span class="t-longo">Dados de postagem</span><span class="t-curto">Postagem</span><small id="legCount" hidden>0</small></button>
+    <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount" hidden>0</small></button>
     <button class="tab" id="tabProg" role="tab" aria-selected="false" type="button">Programar<small id="progCount" hidden>0</small></button>
     <button class="tab" id="tabDem" role="tab" aria-selected="false" type="button">Demandas<small id="demCount" hidden>0</small></button>
   </div>
@@ -869,6 +869,21 @@ function gerarLegenda(titulo, formato, info){
   return t + " 📢\n" + (util ? util + ".\n" : "Fique por dentro das novidades da Prefeitura de Anchieta.\n") + "Acompanhe nossas redes e compartilhe com quem precisa saber! 💚" + fecha(tag);
 }
 const semLegenda = f => f === "Stories";
+// Variações da legenda: mesmo conteúdo, com outra chamada para ação (conforme o tom do texto).
+const CHAMADAS = {
+  festivo: ["Marque quem você quer homenagear! 💚", "Compartilhe esse carinho com a família e os amigos! 🤗", "Deixe a sua mensagem nos comentários! 💬", "Curta, comente e compartilhe! 📲"],
+  serio: ["Compartilhe esta informação: ela pode ajudar alguém. 🤝", "Salve este post e envie para quem precisa. 🔖", "Informação protege. Compartilhe! 📲", "Em caso de dúvida, procure a unidade de saúde ou o serviço indicado. 💚"],
+  neutro: ["Compartilhe com quem precisa saber! 📲", "Marque alguém que precisa ver isso! 👇", "Conta pra gente o que você acha nos comentários! 💬", "Salve este post para consultar depois. 🔖"]
+};
+function variarLegenda(base, n){
+  if (!base || !n) return base;
+  const k = base.lastIndexOf("\n\n#");
+  const corpo = k >= 0 ? base.slice(0, k) : base, tags = k >= 0 ? base.slice(k) : "";
+  const tom = /Denuncie|Disque|Ligue|CVV|câncer|cancer|violência|suicíd|Finados|Bullying|HIV|saúde mental|Saúde mental/i.test(base) ? "serio"
+    : /Feliz|Parabéns|Homenagem|homenagem|Obrigado|Hoje é/i.test(base) ? "festivo" : "neutro";
+  const pool = CHAMADAS[tom], extra = pool[(n - 1) % pool.length];
+  return corpo.replace(/\n+$/, "") + "\n" + extra + tags;
+}
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
 const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
@@ -924,12 +939,16 @@ function renderLeg(){
     const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
     g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
-    const gr = h("button","btn","Gerar legenda de novo"); gr.type = "button";
+    const gr = h("button","btn","Gerar outra legenda"); gr.type = "button"; let vi = 0;
     const ok = h("span","salvo");
     bt.appendChild(sv); if (!sem) bt.appendChild(gr); bt.appendChild(ok); c.appendChild(bt);
     const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
     [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
-    gr.addEventListener("click", () => { ta.value = sugerida; sujo(); });
+    gr.addEventListener("click", () => {
+      vi = (vi + 1) % 5;
+      ta.value = variarLegenda(sugerida, vi); sujo();
+      ok.textContent = vi ? "Variação " + (vi + 1) + " de 5" : "Legenda original";
+    });
     sv.addEventListener("click", async () => {
       if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
       sv.disabled = true; ok.textContent = "Salvando...";
