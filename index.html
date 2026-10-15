@@ -868,7 +868,7 @@ function startApp(){
   const bar = document.getElementById("admBar");
   bar.hidden = !(ADMIN || USER);
   document.getElementById("admTxt").innerHTML = ADMIN
-    ? "<b>Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
+    ? "<b>Olá, abacaxi. Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
     : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar.";
   document.getElementById("admSair").addEventListener("click", () => {
     try { sessionStorage.removeItem("cronoEntrada"); } catch(e){}
