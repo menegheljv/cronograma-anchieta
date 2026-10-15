@@ -754,6 +754,7 @@ function itensDoMes(y, m){
 
 // ---------- Dados de postagem: legenda, horário e colab (depois do ✓) ----------
 let legFiltro = "todas", legSujo = false;
+const editandoLeg = new Set();   // cartões já salvos que a pessoa abriu para editar
 const semAc = t => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "");
 function hashtagDe(t){
   const ign = /^(dia|mundial|nacional|internacional|para|das|dos|com|que|nas|nos|uma|neste|nesta|de|da|do|em|e|o|a|as|os)$/i;
@@ -962,6 +963,18 @@ function renderLeg(){
     c.appendChild(top);
     c.appendChild(h("strong",null,x.titulo));
     const sugerida = gerarLegenda(x.titulo, x.formato, x.obs);
+    if (dadosPreenchidos(x) && !editandoLeg.has(x.id)){
+      // dados já salvos: aparece o resumo, e quem pode editar vê o botão Editar
+      c.appendChild(linhaPauta("Legenda", semLegenda(x.formato) ? "Stories não leva legenda." : x.legenda, false));
+      c.appendChild(linhaPauta("Horário", x.horario, false));
+      c.appendChild(linhaPauta("Colab", x.colab, false));
+      if (pode){
+        const ed = h("button","btn","Editar"); ed.type = "button";
+        ed.addEventListener("click", () => { editandoLeg.add(x.id); legSujo = true; renderLeg(); });
+        const bt0 = h("div","botoes"); bt0.appendChild(ed); c.appendChild(bt0);
+      }
+      lista.appendChild(c); return;
+    }
     if (!pode){
       c.appendChild(h("span","rot","Legenda")); c.appendChild(h("div","lido", semLegenda(x.formato) ? "Stories não leva legenda." : (x.legenda || "—")));
       const g = h("div","campos");
@@ -1039,7 +1052,13 @@ function renderLeg(){
     } else w2.appendChild(chips);
     g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
-    bt.appendChild(sv); bt.appendChild(ok); c.appendChild(bt);
+    bt.appendChild(sv);
+    if (dadosPreenchidos(x)){
+      const cn = h("button","btn","Cancelar"); cn.type = "button";
+      cn.addEventListener("click", () => { editandoLeg.delete(x.id); legSujo = false; renderLeg(); });
+      bt.appendChild(cn);
+    }
+    bt.appendChild(ok); c.appendChild(bt);
     const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
     [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
     sv.addEventListener("click", async () => {
@@ -1047,7 +1066,7 @@ function renderLeg(){
       sv.disabled = true; ok.textContent = "Salvando...";
       try {
         await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:co.value.trim() || " "});
-        legSujo = false; await carregarEstado();
+        editandoLeg.delete(x.id); legSujo = false; await carregarEstado();
       } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
     });
     lista.appendChild(c);
