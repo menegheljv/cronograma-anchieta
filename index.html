@@ -925,14 +925,11 @@ function renderLeg(){
     g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
     const gr = h("button","btn","Gerar legenda de novo"); gr.type = "button";
-    const cp = h("button","btn","Copiar legenda"); cp.type = "button"; const ok = h("span","salvo");
-    bt.appendChild(sv); if (!sem){ bt.appendChild(gr); bt.appendChild(cp); } bt.appendChild(ok); c.appendChild(bt);
+    const ok = h("span","salvo");
+    bt.appendChild(sv); if (!sem) bt.appendChild(gr); bt.appendChild(ok); c.appendChild(bt);
     const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
     [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
     gr.addEventListener("click", () => { ta.value = sugerida; sujo(); });
-    cp.addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(ta.value); ok.textContent = "Copiada"; } catch(e){ ta.select(); ok.textContent = "Selecione e copie"; }
-    });
     sv.addEventListener("click", async () => {
       if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
       sv.disabled = true; ok.textContent = "Salvando...";
