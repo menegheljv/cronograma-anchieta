@@ -15,7 +15,7 @@
   --bg:#ffffff; --surface:#ffffff; --surface-2:#f6f5f2; --border:#e3e0d8;
   --ink:#1a1814; --ink-soft:#5a5446;
   --joao:#0b7a3e; --renata:#7415d1; --isabela:#d6007a; --marcos:#1239b8;
-  --wandinho:#d62828; --flavio:#0e7490; --stories:#7c3aed; --mariana:#f2b705; --mariana-t:#7a5800; --mariana-on:#1a1814; --definir:#475569;
+  --wandinho:#d62828; --flavio:#0e7490; --stories:#7c3aed; --foto:#c24f00; --cobertura:#0e7490; --mariana:#f2b705; --mariana-t:#7a5800; --mariana-on:#1a1814; --definir:#475569;
   --accent:#c23a6b; --gray:#737373; --past:#8a8a8a;
 }
 *{box-sizing:border-box}
@@ -338,9 +338,11 @@ html,body{overflow-x:hidden}
       <legend>Formato</legend>
       <div class="tipos">
         <label><input type="radio" name="tipo" value="Vídeo" required><span>Vídeo</span></label>
-        <label><input type="radio" name="tipo" value="Carrossel"><span>Carrossel</span></label>
-        <label><input type="radio" name="tipo" value="Card"><span>Card</span></label>
+        <label><input type="radio" name="tipo" value="Foto"><span>Foto</span></label>
         <label><input type="radio" name="tipo" value="Stories"><span>Stories</span></label>
+        <label><input type="radio" name="tipo" value="Carrossel"><span>Carrossel</span></label>
+        <label><input type="radio" name="tipo" value="Cobertura"><span>Cobertura</span></label>
+        <label><input type="radio" name="tipo" value="Card"><span>Card</span></label>
       </div>
     </fieldset>
     <div><label class="lbl" for="sugLink">Link de referência (opcional)</label>
@@ -406,11 +408,11 @@ const OWNERS = {
 };
 // [dia, pauta, responsável, observação]
 const OUT_2026 = [
-[1,"Início do Outubro Rosa e Novembro Azul: Câncer de Mama","A definir","Mudar a identidade visual das redes sociais"],
+[1,"Início do Outubro Rosa e Novembro Azul: Câncer de Mama","Marcos","Mudar a identidade visual das redes sociais"],
 [1,"TBT do mês de setembro","Isabela","Produzir"],
 [1,"Dia Internacional das Pessoas Idosas / Dia Nacional do Idoso","A definir","Post carrossel mostrando as atividades oferecidas aos idosos"],
 [1,"Dia Internacional do Café","A definir","Meme para feed"],
-[2,"Outubro Rosa e Novembro Azul","A definir","Card feed / mudar identidade visual das redes sociais"],
+[2,"Outubro Rosa e Novembro Azul","Marcos","Card feed / mudar identidade visual das redes sociais"],
 [2,"Dia Mundial do Sorriso","Mariana","Verificar com a Saúde"],
 [2,"A Semana em 1 min","João","Produzir vídeo"],
 [3,"Dia Mundial do Dentista","Renata","Card stories"],
@@ -445,7 +447,7 @@ const OUT_2026 = [
 [17,"28º Festival Capixaba de Frutos do Mar","João","2º fim de semana do festival"],
 [18,"Dia do Médico","Renata","Card stories"],
 [18,"28º Festival Capixaba de Frutos do Mar","João","Encerramento"],
-[19,"Dia Internacional de Combate ao Câncer de Mama","Mariana","Verificar com a Saúde"],
+[19,"Dia Internacional de Combate ao Câncer de Mama","Marcos","Verificar com a Saúde"],
 [20,"Dia Mundial de Combate ao Bullying","Marcos","Produzir post carrossel"],
 [20,"Gravar Eletiva de Música","A definir","Vídeo de música. Das 13:20 às 15:00."],
 [21,"Dia Nacional da Alimentação na Escola","João","Produzir card feed"],
@@ -532,7 +534,7 @@ const DATA = {
   [21, "Dia da Árvore / Dia Nacional de Luta da Pessoa com Deficiência", "Renata", "Card stories"],
   [23, "Início da Primavera", "Renata", "Card stories"],
   [27, "Dia Mundial do Turismo", "A definir", "Vídeo Turismo"]],
-"2027-10": [[1, "Outubro Rosa: prevenção do câncer de mama", "A definir", "Mudar a identidade visual das redes sociais"],
+"2027-10": [[1, "Outubro Rosa: prevenção do câncer de mama", "Marcos", "Mudar a identidade visual das redes sociais"],
   [1, "Dia Internacional da Pessoa Idosa", "A definir", ""],
   [4, "Dia dos Animais", "A definir", "Animais para adoção"],
   [10, "Dia Mundial da Saúde Mental", "A definir", "Verificar com a Saúde"],
@@ -582,14 +584,15 @@ function corVars(el, v){
 }
 
 // ---------- Estado compartilhado (sugestões, pautas novas e alterações) ----------
-const TIPOS = {"Vídeo":"--joao","Carrossel":"--isabela","Card":"--marcos","Stories":"--stories"};
+const TIPOS = {"Vídeo":"--joao","Foto":"--foto","Stories":"--stories","Carrossel":"--isabela","Cobertura":"--cobertura","Card":"--marcos"};
 let SUGS = [], EXTRAS = [], ALT = {}, sugTipo = null, sugDia = null;
 const ESTADO_LOCAL = "cronoEstado";
 const linkOk = u => { try { const x = new URL(u); return x.protocol==="http:" || x.protocol==="https:"; } catch(e){ return false; } };
-const FORMATOS = ["Vídeo","Carrossel","Card","Stories","Foto"];
+const FORMATOS = ["Vídeo","Foto","Stories","Carrossel","Cobertura","Card"];
 const corFormato = f => TIPOS[f] || "--definir";
 function inferirFormato(t, o){
   const x = (t + " " + o).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/cobertura/.test(x)) return "Cobertura";
   if (/^tbt/.test(x)) return "Carrossel";                 // TBT é sempre carrossel
   if (/semana em 1 min/.test(x)) return "Vídeo";           // A Semana em 1 min é sempre vídeo
   if (/stories/.test(x)) return "Stories";
@@ -739,30 +742,133 @@ function hashtagDe(t){
   const p = semAc(t).replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(w => w.length > 2 && !ign.test(w)).slice(0, 3);
   return p.length ? "#" + p.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join("") : "";
 }
-// Legenda sugerida automaticamente a partir do título, do formato e das informações da pauta
+// Legenda sugerida automaticamente a partir do título, do formato e das informações da pauta.
+// O tom muda conforme o tipo da data: festiva, homenagem, conscientização, campanha de saúde, patriótica...
 function gerarLegenda(titulo, formato, info){
-  const t = String(titulo || "").trim(), x = semAc(t + " " + (info || "")).toLowerCase(), tl = semAc(t).toLowerCase();
-  const util = String(info || "").split(/\.\s+/).map(z => z.trim()).filter(z => z && !/^(produzir|gravar|card|post|verificar|mudar|meme|video|foto|padrao|demanda|objetivo|formato|prazo|vídeo|stories|carrossel)/i.test(semAc(z))).join(". ");
+  if (formato === "Stories") return "";   // stories nunca leva legenda
+  let t = String(titulo || "").trim().replace(/^(gravar|produzir|criar|fazer)\s+/i, "");
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  const tl = semAc(t).toLowerCase();
+  const util = String(info || "").split(/\.\s+/).map(z => z.trim()).filter(z => z && !/^(produzir|gravar|card|post|verificar|mudar|meme|video|foto|padrao|demanda|objetivo|formato|prazo|stories|carrossel|das \d|a confirmar|confirmar)/i.test(semAc(z))).join(". ").replace(/\.$/, "");
+  const curto = t.replace(/^in[ií]cio d[oa]s? /i, "").split(/[:\/]/)[0].split(/ e /i)[0].trim();
+  const tag = hashtagDe(curto);
   const base = ["#Anchieta", "#PrefeituraDeAnchieta"];
-  const fecha = (extra) => "\n\n" + [...extra, ...base].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i).join(" ");
-  if (/semana em 1 min/.test(tl)) return "A Semana em 1 minuto chegou! 📅\nTudo o que aconteceu de mais importante em Anchieta, em um vídeo rápido para você ficar por dentro. Assista e compartilhe! 💚" + fecha(["#ASemanaEm1Minuto"]);
-  if (/^tbt/.test(tl)) return "#TBT " + t.replace(/^tbt\s*/i, "").trim() + " 🎞️\nRelembre os melhores momentos vividos em Anchieta. Qual foi o seu preferido? Conta pra gente nos comentários! 💬" + fecha(["#TBT"]);
-  if (/final de semana|turismo/.test(tl) || /turismo/.test(x)) return "Anchieta tem cenários que encantam! 🌊☀️\nBelas praias, história e natureza para curtir com a família e os amigos. Venha viver o melhor do litoral capixaba! 📍 Anchieta – ES" + fecha(["#TurismoAnchieta", "#VisiteAnchieta"]);
-  if (/natal/.test(tl)) return "Feliz Natal! 🎄✨\nQue este seja um tempo de paz, esperança e união. A Prefeitura de Anchieta deseja a todos os anchietenses um Natal abençoado, cheio de amor e alegria! ❤️" + fecha(["#FelizNatal"]);
-  if (/ano novo|confraternizacao universal|reveillon/.test(tl)) return "Feliz Ano Novo! 🎆🥂\nQue 2027 traga saúde, trabalho e muitas conquistas para todos nós. A Prefeitura de Anchieta agradece a parceria de cada morador e deseja um novo ano de realizações! 💚" + fecha(["#FelizAnoNovo"]);
-  if (/pascoa/.test(tl)) return "Feliz Páscoa! 🐰🍫\nQue esta data traga renovação, paz e momentos especiais ao lado de quem você ama. A Prefeitura de Anchieta deseja a todos uma Páscoa abençoada!" + fecha(["#FelizPascoa"]);
-  if (/carnaval/.test(tl)) return "É Carnaval! 🎭🎉\nAproveite com alegria e responsabilidade. Beba água, use protetor solar e cuide uns dos outros. Bom Carnaval, Anchieta!" + fecha(["#Carnaval"]);
-  if (/dia das maes/.test(tl)) return "Feliz Dia das Mães! 💐💚\nHoje celebramos o amor, a força e a dedicação de todas as mães. A Prefeitura de Anchieta homenageia essas mulheres que fazem a diferença na vida de tantas famílias." + fecha(["#DiaDasMaes"]);
-  if (/dia dos pais/.test(tl)) return "Feliz Dia dos Pais! 👨‍👧‍👦💙\nUma homenagem a todos os pais e figuras paternas pelo carinho, pelo exemplo e pela presença. A Prefeitura de Anchieta deseja a vocês um dia muito especial!" + fecha(["#DiaDosPais"]);
-  if (/dia das criancas/.test(tl)) return "Feliz Dia das Crianças! 🎈🧸\nQue a alegria e a curiosidade de cada criança nos lembrem todos os dias de cuidar do futuro. A Prefeitura de Anchieta deseja um dia cheio de diversão!" + fecha(["#DiaDasCriancas"]);
-  if (/aniversario de anchieta/.test(tl)) return "Parabéns, Anchieta! 🎉💚\nUma cidade de história, belezas naturais e gente acolhedora. Que sigamos juntos construindo um futuro ainda melhor para todos! 📍 Anchieta – ES" + fecha(["#AnchietaAniversario"]);
-  if (/(outubro rosa|novembro azul|setembro amarelo|maio amarelo|agosto dourado|marco lilas|abril azul|janeiro branco|dezembro vermelho|fevereiro laranja|agosto lilas|maio laranja|junho vermelho)/.test(tl))
-    return t.replace(/:.*/, "") + " 💗\n" + (util ? util + ". " : "") + "Informação e cuidado salvam vidas. Procure a unidade de saúde mais próxima e compartilhe essa mensagem!" + fecha([hashtagDe(t.replace(/:.*/, ""))]);
-  if (/^dia (do|da|de|dos|das|mundial|nacional|internacional)/.test(tl)) return "Hoje é " + t + "! 🎉\n" + (util ? util + ". " : "") + "A Prefeitura de Anchieta reconhece e valoriza essa data. Compartilhe com quem merece essa homenagem! 💚" + fecha([hashtagDe(t)]);
-  if (/festival|evento|feira|mostra|caminhada|corrida/.test(tl)) return t + "! 🦐🎶\n" + (util ? util + ". " : "") + "Venha participar e viver essa experiência em Anchieta. Esperamos você! 📍 Anchieta – ES" + fecha([hashtagDe(t)]);
-  return t + " 📢\n" + (util ? util + "\n" : "Fique por dentro das novidades da Prefeitura de Anchieta. ") + "\nAcompanhe nossas redes e compartilhe com quem precisa saber! 💚" + fecha([hashtagDe(t)]);
+  const fecha = (...extra) => "\n\n" + [...extra, ...base].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i).join(" ");
+  const tem = re => re.test(tl);
+
+  // ----- rotinas do cronograma -----
+  if (formato === "Cobertura") return "Cobertura: " + t.replace(/^cobertura( de| do| da)? /i, "") + " 📸\nAcompanhe os melhores momentos e fique por dentro de tudo o que aconteceu. A Prefeitura de Anchieta esteve presente! 💚" + fecha(tag);
+  if (tem(/corpus christi/)) return "Corpus Christi ✝️\nData de fé e tradição para muitas famílias. É ponto facultativo: confira o funcionamento dos serviços municipais nos canais oficiais da Prefeitura de Anchieta." + fecha("#CorpusChristi");
+  if (tem(/^sao joao/)) return "É tempo de São João! 🔥🎶\nQuadrilha, fogueira, comidas típicas e muita animação. Aproveite as festas juninas com segurança e alegria! 🌽" + fecha("#FestaJunina");
+  if (tem(/copa do mundo/)) return t + "! ⚽💚\nO Brasil recebe a Copa do Mundo Feminina e Anchieta vai torcer junto. Vista a camisa e acompanhe com a gente! 🇧🇷" + fecha("#CopaDoMundoFeminina");
+  if (tem(/gabinete em acao/)) return t + " 🚌\nO Gabinete em Ação leva a Prefeitura até você, ouvindo a população e buscando soluções para a sua comunidade. Participe!" + fecha("#GabineteEmAcao");
+  if (tem(/cras x creas/)) return "Você sabe a diferença entre CRAS e CREAS? 🤝\nO CRAS atua na prevenção, fortalecendo os vínculos das famílias e da comunidade. O CREAS atende pessoas e famílias em situação de violação de direitos. Salve este post e compartilhe!" + fecha("#CRAS", "#CREAS");
+  if (tem(/\bpev\b/)) return "Você conhece um local que precisa de um PEV? ♻️\nOs Pontos de Entrega Voluntária ajudam a descartar corretamente o lixo reciclável. Conte nos comentários onde um PEV faria diferença!" + fecha("#PEV", "#Reciclagem");
+  if (tem(/musica/)) return t + " 🎶\nA música desenvolve a criatividade, a concentração e o trabalho em equipe. Confira esse trabalho que leva cultura e aprendizado aos nossos estudantes! 💚" + fecha("#MusicaNasEscolas");
+  if (tem(/visao/)) return "Hoje é Dia Mundial da Visão! 👁️\nCuide dos seus olhos: faça consultas oftalmológicas, proteja-se do sol e descanse da tela do celular e do computador. Enxergar bem melhora a qualidade de vida." + fecha("#DiaMundialDaVisao");
+  if (tem(/semana em 1 min/)) return "A Semana em 1 minuto chegou! 📅\nOs principais acontecimentos de Anchieta, em um vídeo rápido para você ficar por dentro de tudo. Assista e compartilhe! 💚" + fecha("#ASemanaEm1Minuto");
+  if (tem(/^tbt/)) return "#TBT " + t.replace(/^tbt\s*/i, "").trim() + " 🎞️\nRelembre os melhores momentos vividos em Anchieta. Qual foi o seu preferido? Conta pra gente nos comentários! 💬" + fecha("#TBT");
+  if (tem(/final de semana|turismo/)) return "Anchieta tem cenários que encantam! 🌊☀️\nBelas praias, história e natureza para curtir com a família e os amigos. Venha viver o melhor do litoral capixaba! 📍 Anchieta – ES" + fecha("#TurismoAnchieta", "#VisiteAnchieta");
+
+  // ----- datas festivas e feriados -----
+  if (tem(/natal/)) return "Feliz Natal! 🎄✨\nQue este seja um tempo de paz, esperança e união. A Prefeitura de Anchieta deseja a todos os anchietenses um Natal abençoado, cheio de amor e alegria! ❤️" + fecha("#FelizNatal");
+  if (tem(/ano novo|confraternizacao universal|reveillon/)) return "Feliz Ano Novo! 🎆🥂\nQue o novo ano traga saúde, trabalho e muitas conquistas para todos nós. A Prefeitura de Anchieta agradece a parceria de cada morador e deseja um tempo de realizações! 💚" + fecha("#FelizAnoNovo");
+  if (tem(/pascoa/) && !tem(/sexta/)) return "Feliz Páscoa! 🐰🍫\nQue esta data traga renovação, paz e momentos especiais ao lado de quem você ama. A Prefeitura de Anchieta deseja a todos uma Páscoa abençoada!" + fecha("#FelizPascoa");
+  if (tem(/sexta-feira santa/)) return "Sexta-feira Santa 🕊️\nData de fé, reflexão e recolhimento para muitas famílias. Lembramos que é feriado nacional, e os serviços municipais funcionam conforme o calendário divulgado." + fecha("#SextaFeiraSanta");
+  if (tem(/quarta-feira de cinzas/)) return "Quarta-feira de Cinzas 🕊️\nFim do Carnaval e início da Quaresma. Os serviços da Prefeitura voltam ao horário normal conforme o calendário divulgado." + fecha();
+  if (tem(/carnaval/)) return "É Carnaval! 🎭🎉\nCurta com alegria e responsabilidade: beba água, use protetor solar, não dirija se beber e cuide de quem está ao seu lado. Bom Carnaval, Anchieta!" + fecha("#Carnaval");
+  if (tem(/dia das maes/)) return "Feliz Dia das Mães! 💐💚\nHoje celebramos o amor, a força e a dedicação de todas as mães. A Prefeitura de Anchieta homenageia essas mulheres que fazem a diferença na vida de tantas famílias." + fecha("#DiaDasMaes");
+  if (tem(/dia dos pais/)) return "Feliz Dia dos Pais! 👨‍👧‍👦💙\nUma homenagem a todos os pais e figuras paternas pelo carinho, pelo exemplo e pela presença. A Prefeitura de Anchieta deseja a vocês um dia muito especial!" + fecha("#DiaDosPais");
+  if (tem(/dia das criancas/)) return "Feliz Dia das Crianças! 🎈🧸\nQue a alegria e a curiosidade de cada criança nos lembrem todos os dias de cuidar do futuro. A Prefeitura de Anchieta deseja um dia cheio de diversão!" + fecha("#DiaDasCriancas");
+  if (tem(/dia dos namorados/)) return "Feliz Dia dos Namorados! 💕\nAmor combina com um passeio pelas praias de Anchieta. Marque quem vai curtir esse dia com você! 🌅" + fecha("#DiaDosNamorados");
+  if (tem(/aniversario de anchieta/)) return "Parabéns, Anchieta! 🎉💚\nUma cidade de história, belezas naturais e gente acolhedora. Que sigamos juntos construindo um futuro ainda melhor para todos! 📍 Anchieta – ES" + fecha("#AnchietaAniversario");
+  if (tem(/dia de sao jose de anchieta/)) return "Dia de São José de Anchieta 🙏\nHoje lembramos o padroeiro que dá nome à nossa cidade. Que a sua história de fé e dedicação siga inspirando o povo anchietense. 💚" + fecha("#SaoJoseDeAnchieta");
+  if (tem(/black friday/)) return "Black Friday: compre com consciência! 🛍️\nPesquise os preços antes, desconfie de ofertas boas demais para ser verdade e prefira lojas confiáveis. E que tal valorizar o comércio local de Anchieta? 💚" + fecha("#BlackFriday");
+  if (tem(/dia da mentira/)) return "1º de abril: hoje vale brincar! 😄\nMas informação importante a gente não inventa: confira sempre nos canais oficiais da Prefeitura de Anchieta. 💚" + fecha();
+  if (tem(/dia do amigo/)) return "Hoje é Dia do Amigo! 🤝💚\nMarque aquele amigo que está com você em todos os momentos. Amizade é um dos melhores presentes da vida!" + fecha("#DiaDoAmigo");
+  if (tem(/cafe/)) return "Hoje é Dia Internacional do Café! ☕\nQuem aí não começa o dia com uma xícara? Marque quem merece um cafezinho hoje!" + fecha("#DiaDoCafe");
+  if (tem(/sorriso/)) return "Hoje é Dia Mundial do Sorriso! 😊\nUm sorriso muda o dia de quem dá e de quem recebe. E cuidar da saúde bucal faz parte: escove os dentes depois das refeições e visite o dentista regularmente." + fecha("#DiaMundialDoSorriso");
+  if (tem(/primavera/)) return "Começou a primavera! 🌸🌼\nA estação das flores chegou trazendo cor e leveza para os dias. Aproveite o clima ameno e curta os passeios ao ar livre em Anchieta!" + fecha("#Primavera");
+  if (tem(/folclore/)) return "Hoje é Dia do Folclore! 🎭\nLendas, cantigas, danças e histórias passadas de geração em geração. A cultura popular é parte da nossa identidade. Qual lenda você mais gosta?" + fecha("#DiaDoFolclore");
+
+  // ----- datas cívicas e históricas -----
+  if (tem(/tiradentes|independencia do brasil|proclamacao da republica|descobrimento do brasil/)) return t + " 🇧🇷\nData para lembrar e refletir sobre a história do nosso país. " + (tem(/descobrimento/) ? "" : "Hoje é feriado nacional, e os serviços municipais seguem o calendário divulgado. ") + "A Prefeitura de Anchieta deseja um bom dia a todos!" + fecha(tag);
+  if (tem(/abolicao da escravatura/)) return "13 de maio: Abolição da Escravatura 📜\nData para lembrar a luta pela liberdade e refletir sobre o caminho que ainda precisamos percorrer por igualdade e respeito. Combater o racismo é dever de todos." + fecha("#AbolicaoDaEscravatura");
+  if (tem(/consciencia negra/)) return "Dia da Consciência Negra ✊🏿\nUma data para lembrar a luta, valorizar a cultura e reconhecer a enorme contribuição da população negra na construção do Brasil. Respeito e igualdade começam com cada um de nós. Hoje é feriado nacional." + fecha("#ConscienciaNegra");
+  if (tem(/povos indigenas/)) return "Dia dos Povos Indígenas 🌿\nUm dia para reconhecer e respeitar a cultura, a história e os direitos dos povos originários, guardiões da natureza e de saberes ancestrais." + fecha("#PovosIndigenas");
+  if (tem(/finados/)) return "Dia de Finados 🕊️\nUm dia de respeito, lembrança e saudade de quem já partiu. Que o carinho das boas memórias traga conforto às famílias." + fecha();
+  if (tem(/bandeira/)) return "Hoje é Dia da Bandeira! 🇧🇷\nUm dos símbolos da nossa pátria, que representa o povo brasileiro e a nossa história. Viva o Brasil!" + fecha("#DiaDaBandeira");
+  if (tem(/dia do trabalhador$|dia do trabalhador\b/) && !tem(/construcao/)) return "Hoje é Dia do Trabalhador! 👷‍♀️👷‍♂️\nNosso reconhecimento a todos que, com o seu esforço diário, fazem Anchieta e o Brasil funcionarem. Feriado nacional!" + fecha("#DiaDoTrabalhador");
+
+  // ----- campanhas e datas de saúde / conscientização -----
+  const campanhas = [
+    [/outubro rosa|cancer de mama/, "Outubro Rosa 💗\nO câncer de mama, descoberto cedo, tem mais chance de cura. Observe o seu corpo, faça os exames de rotina e procure a unidade de saúde diante de qualquer mudança. Cuide-se, a sua saúde vem em primeiro lugar!", "#OutubroRosa"],
+    [/novembro azul|cancer de prostata/, "Novembro Azul 💙\nCuidar da saúde do homem também é prevenção. Converse com um médico na unidade de saúde sobre os exames e os cuidados com a próstata. Procure atendimento sem medo nem preconceito!", "#NovembroAzul"],
+    [/setembro amarelo|prevencao do suicidio|valorizacao da vida/, "Setembro Amarelo 💛\nFalar salva vidas. Se você ou alguém que você conhece está passando por um momento difícil, não enfrente isso sozinho: procure ajuda. O CVV atende 24 horas, de graça, pelo telefone 188. Você importa!", "#SetembroAmarelo"],
+    [/dezembro vermelho|aids/, "Dezembro Vermelho ❤️\nPrevenção, testagem e tratamento do HIV/AIDS. Faça o teste rápido, gratuito e sigiloso nas unidades de saúde, use preservativo e combata o preconceito. Informação protege!", "#DezembroVermelho"],
+    [/marco lilas|colo do utero/, "Março Lilás 💜\nO câncer do colo do útero pode ser prevenido. Faça o exame preventivo (Papanicolau) e vacine seus filhos contra o HPV. Procure a unidade de saúde mais próxima!", "#MarcoLilas"],
+    [/abril azul|autismo/, "Abril Azul 💙\nConscientização sobre o autismo: informação combate o preconceito. Respeito, acolhimento e inclusão fazem toda a diferença na vida de quem tem o transtorno do espectro autista e de suas famílias.", "#AbrilAzul"],
+    [/maio amarelo|seguranca no transito/, "Maio Amarelo 💛\nPaz no trânsito começa com você! Respeite a sinalização, use cinto de segurança e capacete, não beba se for dirigir e evite o celular ao volante. Vidas valem mais que minutos.", "#MaioAmarelo"],
+    [/maio laranja|abuso e a exploracao sexual/, "Maio Laranja 🧡\nProteger crianças e adolescentes contra o abuso e a exploração sexual é dever de todos. Suspeitou? Denuncie pelo Disque 100, gratuito e anônimo. Proteger é um ato de amor.", "#MaioLaranja"],
+    [/agosto dourado|amamentacao/, "Agosto Dourado 💛\nO leite materno é o melhor alimento para o bebê, exclusivo até os 6 meses. Amamentar fortalece o vínculo e protege a saúde. Procure a unidade de saúde para orientações e apoio.", "#AgostoDourado"],
+    [/agosto lilas|maria da penha/, "Agosto Lilás 💜\nViolência contra a mulher não é normal e tem saída. Denuncie pelo Ligue 180 (gratuito, 24 horas) e ligue 190 em caso de emergência. Você não está sozinha.", "#AgostoLilas"],
+    [/janeiro branco|saude mental/, "Saúde mental importa 🤍\nCuidar da mente é tão importante quanto cuidar do corpo. Converse, peça ajuda e procure acompanhamento profissional sempre que precisar. Falar não é fraqueza.", "#SaudeMental"],
+    [/junho vermelho|doador de sangue/, "Doe sangue, salve vidas! ❤️\nUma única doação pode ajudar até quatro pessoas. Se você está em boas condições de saúde, procure um hemocentro e seja um doador.", "#DoeSangue"],
+    [/diabetes/, "Dia Mundial do Diabetes 💙\nAlimentação saudável, atividade física e acompanhamento médico ajudam a prevenir e controlar a doença. Procure a unidade de saúde para medir a glicemia e tirar dúvidas.", "#DiaMundialDoDiabetes"],
+    [/hanseniase/, "Janeiro Roxo 💜\nA hanseníase tem cura e o tratamento é gratuito no SUS. Manchas na pele com perda de sensibilidade merecem atenção: procure a unidade de saúde. Informação combate o preconceito.", "#JaneiroRoxo"],
+    [/fevereiro laranja|fevereiro roxo/, "Fevereiro Laranja e Roxo 🧡💜\nConscientização sobre a leucemia, a doença de Alzheimer e o lúpus. Diagnóstico e tratamento precoces fazem diferença, e a informação combate o preconceito. Procure a unidade de saúde.", "#FevereiroLaranjaERoxo"],
+    [/doencas raras/, "Dia Mundial das Doenças Raras 💚\nDiagnóstico precoce e acesso ao tratamento mudam vidas. Informação, empatia e acolhimento fazem toda a diferença para quem convive com uma doença rara.", "#DoencasRaras"],
+    [/sindrome de down/, "Dia Internacional da Síndrome de Down 💛💙\nInclusão começa com respeito. Toda pessoa tem o direito de aprender, trabalhar e conviver, com oportunidades iguais. Vamos construir uma Anchieta para todos!", "#SindromeDeDown"],
+    [/pessoas com deficiencia|deficiencia/, "Dia da Pessoa com Deficiência ♿💙\nAcessibilidade e respeito são direitos de todos. Uma cidade inclusiva é aquela em que cada pessoa pode participar e conviver em igualdade.", "#Inclusao"],
+    [/violencia/, "Violência contra a mulher não é normal 💜\nSe você sofre ou presencia uma situação de violência, denuncie: Ligue 180 (gratuito, 24 horas) e ligue 190 em caso de emergência. Você não está sozinha.", "#VidaSemViolencia"],
+    [/bullying/, "Bullying não é brincadeira. 💙\nZombar, excluir e agredir machuca, deixa marcas e pode afetar a saúde, a autoestima e os estudos. Se você sofre ou presencia, não fique calado: converse com um adulto de confiança, com a escola ou ligue para o Disque 100, gratuito.\nRespeito começa com cada um de nós. 🤝", "#BullyingNao"],
+    [/direitos humanos/, "Dia Internacional dos Direitos Humanos ⚖️\nDignidade, igualdade e respeito são direitos de todas as pessoas, sem exceção. Defender os direitos humanos é tarefa de todos nós.", "#DireitosHumanos"],
+    [/saude$|dia mundial da saude|vacinacao/, "", ""],
+  ];
+  for (const [re, texto, hs] of campanhas){
+    if (texto && re.test(tl)){
+      const rosaAzul = /outubro rosa/.test(tl) && /novembro azul/.test(tl) ? "\nE em novembro vem aí o Novembro Azul, dedicado à saúde do homem. 💙" : "";
+      return texto + rosaAzul + fecha(hs);
+    }
+  }
+  if (tem(/vacinacao/)) return "Vacina protege! 💉\n" + (util ? util + ". " : "") + "Mantenha a caderneta de vacinação em dia e procure a unidade de saúde mais próxima. Vacinar é cuidar de você e de toda a comunidade." + fecha("#VacinaProtege");
+  if (tem(/dia mundial da saude/)) return "Hoje é Dia Mundial da Saúde! 💚\nSaúde se constrói todos os dias, com alimentação equilibrada, atividade física, sono e acompanhamento médico. Procure a unidade de saúde mais próxima e cuide de você." + fecha("#DiaMundialDaSaude");
+
+  // ----- meio ambiente e animais -----
+  if (tem(/arvore|meio ambiente|agua|oceano|amazonia|animais|cachorro/)) {
+    if (tem(/animais|cachorro/)) return "Hoje é Dia dos Animais! 🐶🐱\nAnimais são seres que sentem e merecem respeito, cuidado e um lar. Pense em adotar, nunca abandone e denuncie maus-tratos. Adote com amor!" + fecha("#AdoteUmAmigo");
+    return t + " 🌳\nCuidar do meio ambiente é tarefa de todos nós: economize água, descarte o lixo corretamente e valorize a natureza que faz parte de Anchieta. Pequenas atitudes fazem grande diferença!" + fecha(tag);
+  }
+
+  // ----- homenagens a profissionais e grupos -----
+  if (tem(/alimentacao na escola/)) return "Dia Nacional da Alimentação na Escola 🍎\nAlimentação saudável faz bem para o corpo e para o aprendizado. Valorizamos a merenda escolar, preparada com carinho para os nossos estudantes. 💚" + fecha("#AlimentacaoEscolar");
+  if (tem(/^dia (do|da|dos|das) (medic|enfermeir|dentista|professor|servidor|agricultor|agricultura|fisioterapeuta|terapeuta|engenheiro|agente|trabalhador|estudante|motorista|agronomo|comerciante|bombeiro|policial|construcao|leitura)/) || tem(/dia (do|da) (trabalhador da construcao|alimentacao)/)) {
+    if (tem(/professor/)) return "Feliz Dia do Professor! 👩‍🏫👨‍🏫📚\nObrigado a quem dedica a vida a ensinar, inspirar e transformar o futuro. A Prefeitura de Anchieta reconhece e agradece o trabalho dos nossos professores! 💚" + fecha("#DiaDoProfessor");
+    if (tem(/servidor/)) return "Hoje é Dia do Servidor Público! 👏\nObrigado a todos os servidores que, todos os dias, trabalham para atender melhor a população de Anchieta. Seu trabalho faz a cidade funcionar! 💚" + fecha("#DiaDoServidor");
+    if (tem(/estudante/)) return "Hoje é Dia do Estudante! 📚✏️\nParabéns a todos que se dedicam a aprender e a construir o próprio futuro. Estudar é um investimento para a vida toda! 💚" + fecha("#DiaDoEstudante");
+    if (tem(/alimentacao/)) return "Dia Nacional da Alimentação na Escola 🍎\nAlimentação saudável faz bem para o corpo e para o aprendizado. Valorizamos a merenda escolar, preparada com carinho para nossos estudantes. 💚" + fecha("#AlimentacaoEscolar");
+    if (tem(/leitura/)) return "Hoje é Dia Nacional da Leitura! 📖\nLer abre portas, amplia horizontes e é um presente para qualquer idade. Qual livro marcou você? Conta pra gente! 💚" + fecha("#DiaDaLeitura");
+    if (tem(/agricultor|agricultura/)) return "Hoje é " + t + "! 🌾\nHomenagem a quem planta, cuida e colhe o alimento que chega à nossa mesa. A Prefeitura de Anchieta reconhece o trabalho do campo e está ao lado de quem produz." + (util ? " " + util + "." : "") + fecha("#Agricultura");
+    if (tem(/construcao/)) return "Hoje é Dia do Trabalhador da Construção Civil! 🏗️\nNosso reconhecimento a quem constrói as casas, as ruas e as obras que fazem Anchieta crescer. Obrigado pelo seu esforço! 💚" + fecha("#ConstrucaoCivil");
+    return "Hoje é " + t + "! 👏\nNosso reconhecimento e gratidão a quem dedica o seu trabalho a servir e a cuidar das pessoas em Anchieta. Obrigado por tudo que você faz! 💚" + fecha(tag);
+  }
+  if (tem(/pescador|sao pedro/)) return "Hoje é Dia do Pescador! 🎣🌊\nHomenagem aos pescadores de Anchieta, que levam sustento às famílias e preservam uma tradição do nosso litoral. Boa pesca e bons ventos! ⚓" + fecha("#DiaDoPescador");
+  if (tem(/dia dos avos/)) return "Feliz Dia dos Avós! 👵👴💚\nObrigado por tanto carinho, histórias e sabedoria. Marque seus avós e mostre o quanto eles são importantes!" + fecha("#DiaDosAvos");
+  if (tem(/idos/)) return "Dia da Pessoa Idosa 💛\nRespeito, cuidado e atenção a quem tanto contribuiu para a nossa história. Valorizar a pessoa idosa é dever de todos." + (util ? " " + util + "." : "") + fecha("#PessoaIdosa");
+  if (tem(/dia internacional da mulher|dia da mulher/)) return "Hoje é Dia Internacional da Mulher! 💜\nParabéns a todas as mulheres que, com força, coragem e dedicação, constroem a nossa cidade e a nossa história. Respeito e igualdade todos os dias!" + fecha("#DiaDaMulher");
+  if (tem(/mulher rural/)) return "Dia Internacional da Mulher Rural 🌾💚\nHomenagem às mulheres do campo, que cultivam, produzem e sustentam famílias e comunidades. Sua força alimenta o nosso município." + fecha("#MulherRural");
+  if (tem(/consumidor/)) return "Hoje é Dia do Consumidor! 🛒\nConheça seus direitos: exija nota fiscal, guarde comprovantes e pesquise antes de comprar. Consumidor informado é consumidor protegido." + fecha("#DiaDoConsumidor");
+  if (tem(/turismo/)) return "Hoje é Dia Mundial do Turismo! 🌴\nAnchieta é história, natureza e gente acolhedora. Venha conhecer o nosso litoral! 📍 Anchieta – ES" + fecha("#TurismoAnchieta");
+
+  // ----- eventos locais -----
+  if (tem(/festival|evento|feira|mostra|caminhada|corrida|programacao/)) return t + "! 🦐🎶\n" + (util ? util + ". " : "") + "Venha participar e viver essa experiência em Anchieta. Esperamos você! 📍 Anchieta – ES" + fecha(tag);
+
+  // ----- demais datas (tom neutro) -----
+  if (/^dia (do|da|de|dos|das|mundial|nacional|internacional)/.test(tl)) return t + " 💚\n" + (util ? util + ". " : "") + "A Prefeitura de Anchieta se une a essa data. Compartilhe esta mensagem!" + fecha(tag);
+  return t + " 📢\n" + (util ? util + ".\n" : "Fique por dentro das novidades da Prefeitura de Anchieta.\n") + "Acompanhe nossas redes e compartilhe com quem precisa saber! 💚" + fecha(tag);
 }
-const dadosPreenchidos = x => !!(x.legenda && x.horario);
+const semLegenda = f => f === "Stories";
+const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
 const pendentesDados = () => listaProgramar().filter(x => !dadosPreenchidos(x));
 function renderLeg(){
   const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
@@ -788,18 +894,22 @@ function renderLeg(){
     c.appendChild(h("strong",null,x.titulo));
     const sugerida = gerarLegenda(x.titulo, x.formato, x.obs);
     if (!pode){
-      c.appendChild(h("span","rot","Legenda")); c.appendChild(h("div","lido", x.legenda || "—"));
+      c.appendChild(h("span","rot","Legenda")); c.appendChild(h("div","lido", semLegenda(x.formato) ? "Stories não leva legenda." : (x.legenda || "—")));
       const g = h("div","campos");
       const a1 = h("div"); a1.appendChild(h("span","rot","Horário")); a1.appendChild(h("div","lido", x.horario || "—"));
       const a2 = h("div"); a2.appendChild(h("span","rot","Colab")); a2.appendChild(h("div","lido", x.colab || "—"));
       g.appendChild(a1); g.appendChild(a2); c.appendChild(g);
       lista.appendChild(c); return;
     }
-    const ta = h("textarea"); ta.maxLength = 2200; ta.value = x.legenda || sugerida; ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
+    const sem = semLegenda(x.formato);
+    const ta = h("textarea"); ta.maxLength = 2200; ta.value = sem ? "" : (x.legenda || sugerida); ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
     const cont = h("div","cont", ta.value.length + "/2200");
-    c.appendChild(h("span","rot","Legenda"));
-    if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
-    c.appendChild(ta); c.appendChild(cont);
+    if (sem){ c.appendChild(h("div","auto","Stories não leva legenda: preencha só o horário e o colab.")); }
+    else {
+      c.appendChild(h("span","rot","Legenda"));
+      if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
+      c.appendChild(ta); c.appendChild(cont);
+    }
     const g = h("div","campos");
     const w1 = h("div"); w1.appendChild(h("span","rot","Horário da postagem"));
     const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
@@ -809,7 +919,7 @@ function renderLeg(){
     const bt = h("div","botoes"); const sv = h("button","btn pri","Salvar"); sv.type = "button";
     const gr = h("button","btn","Gerar legenda de novo"); gr.type = "button";
     const cp = h("button","btn","Copiar legenda"); cp.type = "button"; const ok = h("span","salvo");
-    bt.appendChild(sv); bt.appendChild(gr); bt.appendChild(cp); bt.appendChild(ok); c.appendChild(bt);
+    bt.appendChild(sv); if (!sem){ bt.appendChild(gr); bt.appendChild(cp); } bt.appendChild(ok); c.appendChild(bt);
     const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
     [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
     gr.addEventListener("click", () => { ta.value = sugerida; sujo(); });
@@ -820,7 +930,7 @@ function renderLeg(){
       if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
       sv.disabled = true; ok.textContent = "Salvando...";
       try {
-        await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:ta.value.trim() || " ", horario:hr.value, colab:co.value.trim() || " "});
+        await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:co.value.trim() || " "});
         legSujo = false; await carregarEstado();
       } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
     });
@@ -876,7 +986,7 @@ function cardProg(x){
   c.appendChild(linhaPauta("Título", x.titulo, false));
   c.appendChild(linhaPauta("Link de referência", x.link, true));
   c.appendChild(linhaPauta("Informações", String(x.obs || "").trim(), false));
-  c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", x.legenda || gerarLegenda(x.titulo, x.formato, x.obs), false));
+  c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", semLegenda(x.formato) ? "Stories não leva legenda." : (x.legenda || gerarLegenda(x.titulo, x.formato, x.obs)), false));
   c.appendChild(linhaPauta("Horário", x.horario, false));
   c.appendChild(linhaPauta("Colab", x.colab, false));
   if (x.feitoPor) c.appendChild(h("div","feitopor","Marcada como feita por " + (x.feitoPor === "Admin" ? "João" : x.feitoPor)));
@@ -979,7 +1089,7 @@ function pautaEl(it){
   c.appendChild(linhaPauta("Link de referência", link, true));
   c.appendChild(linhaPauta("Informações", info, false));
   if (it[10] || it[11] || it[12]){
-    c.appendChild(linhaPauta("Legenda", it[10], false));
+    if (!semLegenda(it[7])) c.appendChild(linhaPauta("Legenda", it[10], false));
     c.appendChild(linhaPauta("Horário", it[11], false));
     c.appendChild(linhaPauta("Colab", it[12], false));
   }

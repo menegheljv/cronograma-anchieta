@@ -8,7 +8,7 @@
 //       Executar como: Eu | Quem pode acessar: Qualquer pessoa
 //  4) Copie o URL gerado e cole em SUGGEST_URL, no começo do script do index.html.
 
-const TIPOS = ['Vídeo', 'Carrossel', 'Card', 'Stories'];
+const TIPOS = ['Vídeo', 'Foto', 'Stories', 'Carrossel', 'Cobertura', 'Card'];
 // Planilha de respostas do formulário de demandas. A conta que publica este script precisa ter acesso a ela.
 const DEMANDAS_PLANILHA = '1KUYV7CNIi0U2AjwB4ibu13Mv78am1W3hesGJuip53ww';
 const DEMANDAS_ABA = 'Respostas ao formulário 1';
