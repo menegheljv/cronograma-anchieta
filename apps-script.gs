@@ -12,7 +12,7 @@ const TIPOS = ['Vídeo', 'Carrossel', 'Card', 'Stories'];
 const ESQUEMA = {
   Sugestoes:   ['id', 'data', 'tipo', 'titulo', 'link', 'criadoEm', 'status', 'info'],
   Pautas:      ['id', 'data', 'titulo', 'responsavel', 'obs', 'sugestaoId', 'formato', 'link'],
-  Alteracoes:  ['chave', 'data', 'responsavel', 'titulo', 'obs', 'removida', 'feito', 'feitoPor', 'formato', 'link']
+  Alteracoes:  ['chave', 'data', 'responsavel', 'titulo', 'obs', 'removida', 'feito', 'feitoPor', 'formato', 'link', 'programada']
 };
 
 function aba_(nome) {
@@ -35,7 +35,7 @@ function ler_(nome) {
   const cab = v[0];
   return v.slice(1).filter(r => r[0] !== '').map(r => {
     const o = {};
-    cab.forEach((k, i) => { o[k] = (k === 'removida' || k === 'feito') ? (r[i] === true || r[i] === 'TRUE') : txt_(r[i]); });
+    cab.forEach((k, i) => { o[k] = (k === 'removida' || k === 'feito' || k === 'programada') ? (r[i] === true || r[i] === 'TRUE') : txt_(r[i]); });
     return o;
   });
 }
@@ -112,7 +112,7 @@ function doPost(e) {
     }
     if (a === 'alterar') {
       const campos = {};
-      ['data', 'responsavel', 'titulo', 'obs', 'formato', 'link', 'removida'].forEach(k => { if (c[k] !== undefined) campos[k] = c[k]; });
+      ['data', 'responsavel', 'titulo', 'obs', 'formato', 'link', 'removida', 'programada'].forEach(k => { if (c[k] !== undefined) campos[k] = c[k]; });
       if (campos.link !== undefined && String(campos.link).trim() && !/^https?:\/\//i.test(String(campos.link).trim())) return resp_({ ok: false, erro: 'dados inválidos' });
       if (campos.data !== undefined && !dataOk_(campos.data)) return resp_({ ok: false, erro: 'dados inválidos' });
       upsertAlteracao_(String(c.chave), campos);

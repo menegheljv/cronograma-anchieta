@@ -158,6 +158,10 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 .stt{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft)}
 .stt.aprovada{background:#e3f4e8;color:var(--joao)}
 .sugitem.rejeitada{opacity:.55}
+.pauta.prog{border-left-color:var(--ct,var(--c))}
+.pauta .quando{font-size:13px;font-weight:700}
+.pauta .feitopor{font-size:12.5px;color:var(--ink-soft)}
+.progtag{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#e3f4e8;color:var(--joao)}
 a.btn{text-decoration:none;display:inline-block}
 a.btn[hidden]{display:none}
 .dem{padding:14px 16px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:12px;background:#fff;display:grid;gap:6px}
@@ -218,6 +222,7 @@ a.btn[hidden]{display:none}
   <div class="tabs" role="tablist">
     <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
     <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount">0</small></button>
+    <button class="tab" id="tabProg" role="tab" aria-selected="false" type="button">Programar<small id="progCount">0</small></button>
     <button class="tab" id="tabDem" role="tab" aria-selected="false" type="button">Demandas<small id="demCount">0</small></button>
   </div>
   <section id="vCal">
@@ -228,6 +233,13 @@ a.btn[hidden]{display:none}
   <div class="grid" id="grid"></div>
   <div class="list" id="list"></div>
   <p class="foot">Clique em um dia para sugerir uma pauta. O cronograma em si só é alterado pela coordenação.</p>
+  </section>
+  <section id="vProg" hidden>
+    <div class="sughead"><h2>Para programar</h2></div>
+    <p class="vazio" id="progVazio" hidden>Nada para programar ainda. Quando alguém marcar ✓ em uma pauta, ela aparece aqui.</p>
+    <div id="progLista"></div>
+    <div class="sughead"><h2>Já programadas</h2></div>
+    <div id="progFeitas"></div>
   </section>
   <section id="vDem" hidden>
     <p class="aviso" id="avisoDem" hidden></p>
@@ -539,7 +551,7 @@ function apiLocal(c){
     } else if (c.acao === "alterar"){
       let a = e.alteracoes.find(x => x.chave === c.chave);
       if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
-      ["data","responsavel","titulo","obs","formato","link","removida"].forEach(k => { if (c[k] !== undefined) a[k] = c[k]; });
+      ["data","responsavel","titulo","obs","formato","link","removida","programada"].forEach(k => { if (c[k] !== undefined) a[k] = c[k]; });
     } else throw new Error("acao");
   }
   gravarEstadoLocal(e);
@@ -573,15 +585,16 @@ function todosItens(){
   const out = [];
   Object.keys(DATA).forEach(key => DATA[key].forEach(([d,t,o,obs]) => {
     const dt = key + "-" + pad2(d);
-    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false, formato:inferirFormato(t, obs||""), link:""});
+    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false, formato:inferirFormato(t, obs||""), link:"", programada:false});
   }));
-  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false, formato:x.formato || "", link:linkOk(x.link) ? x.link : ""}));
+  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false, formato:x.formato || "", link:linkOk(x.link) ? x.link : "", programada:false}));
   return out.map(x => {
     const a = ALT[x.id]; if (!a) return x;
     const rem = a.removida === true || a.removida === "TRUE" || a.removida === 1;
     return {id:x.id, data:dataOk(a.data) ? a.data : x.data, titulo:a.titulo || x.titulo,
       owner:OWNERS[a.responsavel] ? a.responsavel : x.owner, obs:a.obs ? a.obs : x.obs, removida:rem,
       feito:a.feito === true || a.feito === "TRUE" || a.feito === 1,
+      programada:a.programada === true || a.programada === "TRUE" || a.programada === 1,
       formato:a.formato ? String(a.formato).trim() : x.formato,
       link:a.link ? (linkOk(String(a.link).trim()) ? String(a.link).trim() : "") : x.link};
   }).filter(x => !x.removida);
@@ -600,6 +613,56 @@ function itensDoMes(y, m){
     if ((w===0 || w===6) && !dias.has(d) && !rem) lista.push([d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1)), "Vídeo", ""]);
   }
   return {lista, reais: base.length};
+}
+
+// ---------- Programar: pautas marcadas ✓ aguardando programação ----------
+const ehVerdade = v => v === true || v === "TRUE" || v === 1;
+function listaProgramar(){
+  const l = todosItens().filter(x => x.feito).map(x => Object.assign({}, x, {feitoPor:(ALT[x.id] || {}).feitoPor || ""}));
+  Object.keys(ALT).filter(k => k.startsWith("w:")).forEach(k => {
+    const a = ALT[k];
+    if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
+      l.push({id:k, data:k.slice(2), titulo:"Final de semana", owner:"Wandinho", obs:"Vídeo Turismo. Padrão de fim de semana sem pauta.", formato:"Vídeo", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+  });
+  return l.sort((a,b) => a.data.localeCompare(b.data));
+}
+function cardProg(x){
+  const c = h("div","pauta prog" + (x.programada ? " feito" : ""));
+  corVars(c, OWNERS[x.owner]);
+  const top = h("div","pautatop");
+  const [yy,mm,dd] = x.data.split("-").map(Number);
+  const dow = DOW[new Date(yy, mm-1, dd).getDay()];
+  top.appendChild(h("span","resp", fmtDia(x.data) + " (" + dow + ") · " + (x.owner === "A definir" ? "responsável a definir" : x.owner)));
+  const ac = h("div","acoesp");
+  if (x.programada) ac.appendChild(h("span","progtag","✓ Programada"));
+  if (ADMIN){
+    const b = h("button", x.programada ? "btn" : "btn pri", x.programada ? "Desfazer" : "Marcar como programada"); b.type = "button";
+    b.addEventListener("click", async () => {
+      try { await post({acao:"alterar", chave:x.id, programada:!x.programada}); await carregarEstado(); } catch(err){ alert(msgErro(err)); }
+    });
+    ac.appendChild(b);
+  }
+  top.appendChild(ac); c.appendChild(top);
+  const fv = h("span","v");
+  if (x.formato){ const t = h("span","tag",x.formato); corVars(t, corFormato(x.formato)); fv.appendChild(t); }
+  else { fv.textContent = "—"; fv.classList.add("nada"); }
+  const lf = h("div","linha"); lf.appendChild(h("span","k","Formato")); lf.appendChild(fv); c.appendChild(lf);
+  c.appendChild(linhaPauta("Título", x.titulo, false));
+  c.appendChild(linhaPauta("Link de referência", x.link, true));
+  c.appendChild(linhaPauta("Informações", String(x.obs || "").trim(), false));
+  if (x.feitoPor) c.appendChild(h("div","feitopor","Marcada como feita por " + (x.feitoPor === "Admin" ? "abacaxi" : x.feitoPor)));
+  return c;
+}
+function renderProg(){
+  const todas = listaProgramar();
+  const fila = todas.filter(x => !x.programada), feitas = todas.filter(x => x.programada);
+  document.getElementById("progCount").textContent = fila.length;
+  const a = document.getElementById("progLista"), b = document.getElementById("progFeitas");
+  a.textContent = ""; b.textContent = "";
+  document.getElementById("progVazio").hidden = fila.length > 0;
+  fila.forEach(x => a.appendChild(cardProg(x)));
+  if (!feitas.length) b.appendChild(h("p","vazio","Nenhuma pauta programada ainda."));
+  feitas.forEach(x => b.appendChild(cardProg(x)));
 }
 
 // ---------- Calendário ----------
@@ -823,6 +886,7 @@ function atualizar(){
   document.getElementById("sugCount").textContent = pendentes().length;
   setMonth(CUR, true);
   renderSug();
+  renderProg();
   if (document.getElementById("dlgDia").open) renderDia();
 }
 function buildMonths(){
@@ -985,7 +1049,7 @@ function openDlg(d){
   if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open","");
 }
 function showTab(which){
-  const abas = {cal:["vCal","tabCal"], sug:["vSug","tabSug"], dem:["vDem","tabDem"]};
+  const abas = {cal:["vCal","tabCal"], prog:["vProg","tabProg"], sug:["vSug","tabSug"], dem:["vDem","tabDem"]};
   Object.keys(abas).forEach(k => {
     document.getElementById(abas[k][0]).hidden = k !== which;
     document.getElementById(abas[k][1]).setAttribute("aria-selected", String(k === which));
@@ -1072,6 +1136,7 @@ function initSug(){
   document.getElementById("tabSug").addEventListener("click", () => showTab("sug"));
   document.getElementById("sugRefresh").addEventListener("click", carregarEstado);
   document.getElementById("tabDem").addEventListener("click", () => showTab("dem"));
+  document.getElementById("tabProg").addEventListener("click", () => showTab("prog"));
   document.getElementById("demRefresh").addEventListener("click", carregarDemandas);
   document.getElementById("sugCancel").addEventListener("click", () => document.getElementById("dlg").close());
   document.getElementById("sugForm").addEventListener("submit", async e => {
