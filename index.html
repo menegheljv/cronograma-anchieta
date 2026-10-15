@@ -1107,8 +1107,8 @@ function cardProg(x, postada){
   const ac = h("div","acoesp");
   if (postada) ac.appendChild(h("span","progtag","✓ Postada"));
   else if (x.programada) ac.appendChild(h("span","progtag","✓ Programada"));
-  if (ADMIN && !postada){
-    const b = h("button", x.programada ? "btn" : "btn pri", x.programada ? "Desfazer" : "Marcar como programada"); b.type = "button";
+  if (ADMIN && (!postada || x.data === hojeIso())){
+    const b = h("button", x.programada ? "btn" : "btn pri", x.programada ? "Desfazer" : (x.data === hojeIso() ? "Marcar como postada" : "Marcar como programada")); b.type = "button";
     b.addEventListener("click", async () => {
       try { await post({acao:"alterar", chave:x.id, programada:!x.programada}); await carregarEstado(); } catch(err){ alert(msgErro(err)); }
     });
@@ -1132,8 +1132,8 @@ function renderProg(){
   const hoje = hojeIso();
   const todas = listaProgramar();
   // ordem da aba: para programar, já programadas e, por último, as postadas (dia que já passou)
-  const postadas = todas.filter(x => x.data < hoje).sort((a,b) => b.data.localeCompare(a.data));
-  const futuras = todas.filter(x => x.data >= hoje);
+  const postadas = todas.filter(x => x.data < hoje || (x.data === hoje && x.programada)).sort((a,b) => b.data.localeCompare(a.data));
+  const futuras = todas.filter(x => x.data >= hoje && !(x.data === hoje && x.programada));
   const fila = futuras.filter(x => !x.programada), feitas = futuras.filter(x => x.programada);
   contador("progCount", fila.length);
   const a = document.getElementById("progLista"), b = document.getElementById("progFeitas"), c = document.getElementById("progPostadas");
