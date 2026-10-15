@@ -903,12 +903,20 @@ function tomLegenda(base){
     : /Feliz|Parabéns|Homenagem|homenagem|Obrigado|Hoje é/i.test(base) ? "festivo" : "neutro";
 }
 function variarLegenda(base, n){
+  // cada opção muda a estrutura do texto (gancho, tamanho, tópicos, ordem), a chamada final e as hashtags
   if (!base || !n) return base;
   const k = base.lastIndexOf("\n\n#");
-  const corpo = k >= 0 ? base.slice(0, k) : base, tags = k >= 0 ? base.slice(k) : "";
-  const tom = tomLegenda(base), pool = CHAMADAS[tom], ab = ABERTURAS[tom][n % ABERTURAS[tom].length];
-  const extra = pool[(n - 1) % pool.length];
-  return (ab ? ab + "\n" : "") + corpo.replace(/\n+$/, "") + "\n" + extra + tags;
+  const corpo = (k >= 0 ? base.slice(0, k) : base).replace(/\n+$/, ""), tags = k >= 0 ? base.slice(k + 2).trim() : "";
+  const linhas = corpo.split("\n"), titulo = linhas[0].trim();
+  const frases = linhas.slice(1).join(" ").trim().split(/(?<=[.!?])\s+/).filter(Boolean);
+  const tom = tomLegenda(base), cta = CHAMADAS[tom][(n - 1) % CHAMADAS[tom].length], ab = ABERTURAS[tom][n % ABERTURAS[tom].length];
+  const ht = tags.split(/\s+/).filter(Boolean);
+  if (!ht.length) ht.push("#Anchieta", "#PrefeituraDeAnchieta");   // toda legenda leva hashtag
+  const junta = (...p) => p.filter(Boolean).join("\n\n");
+  if (n === 1) return junta(ab + "\n" + titulo + (frases.length ? "\n" + frases.join(" ") : ""), cta, ht.join(" "));
+  if (n === 2) return junta(titulo + (frases[0] ? "\n" + frases[0] : ""), cta, ht.slice(0, 2).join(" "));
+  if (n === 3) return junta("📌 " + titulo, frases.map(f => "▪️ " + f).join("\n"), cta, ht.join(" "));
+  return junta(ab + "\n" + frases.join(" "), titulo + "\n" + cta, [...ht].reverse().join(" "));
 }
 const HORARIOS_PRONTOS = ["12:00", "18:00", "20:00"];
 // ---------- Arrobas prontos (para o campo Colab) ----------
