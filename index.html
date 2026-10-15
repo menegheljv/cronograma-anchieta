@@ -257,8 +257,7 @@ a.btn[hidden]{display:none}
     <p class="vazio" id="demVazio" hidden>Nenhuma demanda recebida ainda.</p>
   </section>
   <section id="vSug" hidden>
-    <p class="aviso" id="avisoLocal" hidden>Modo de teste: as sugestões ficam salvas só neste navegador. Para juntar as de todos em um só lugar, falta conectar a planilha (veja apps-script.gs). As alterações do administrador também ficam só aqui.</p>
-    <div class="sughead"><h2>Todas as sugestões</h2><button class="btn" id="sugRefresh" type="button">Atualizar</button></div>
+        <div class="sughead"><h2>Todas as sugestões</h2><button class="btn" id="sugRefresh" type="button">Atualizar</button></div>
     <div class="tfilt" id="tfilt"></div>
     <div id="sugList"></div>
     <p class="vazio" id="sugVazio" hidden>Nenhuma sugestão por aqui ainda. Clique em um dia no cronograma para enviar a primeira.</p>
@@ -580,7 +579,6 @@ async function carregarEstado(){
   EXTRAS = (e.extras || []).filter(x => x && x.id && dataOk(x.data) && x.titulo && OWNERS[x.responsavel || "A definir"]);
   ALT = {};
   (Array.isArray(e.alteracoes) ? e.alteracoes : []).forEach(a => { if (a && a.chave) ALT[a.chave] = a; });
-  document.getElementById("avisoLocal").hidden = !!SUGGEST_URL;
   atualizar();
 }
 const pendentes = () => SUGS.filter(x => x.status === "pendente");
@@ -1175,8 +1173,6 @@ async function carregarDemandas(){
   if (DEMANDAS_FORM && linkOk(DEMANDAS_FORM)){ nova.href = DEMANDAS_FORM; nova.hidden = false; }
   aviso.hidden = true;
   if (!SUGGEST_URL){
-    aviso.hidden = false;
-    aviso.textContent = "As demandas ainda não estão conectadas. Falta publicar o Apps Script e colocar o endereço dele no site.";
     DEMS = []; renderDem(); return;
   }
   try {
@@ -1241,7 +1237,6 @@ function startApp(){
   document.getElementById("admTxt").innerHTML = ADMIN
     ? "<b>Olá, abacaxi. Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
     : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar. Todos veem o que está feito.";
-  if (!SUGGEST_URL) document.getElementById("admTxt").innerHTML += " <b>⚠ Planilha ainda não conectada:</b> o que for marcado ou alterado aparece só neste navegador.";
   document.getElementById("admSair").addEventListener("click", () => {
     try { sessionStorage.removeItem("cronoEntrada"); } catch(e){}
     location.reload();
