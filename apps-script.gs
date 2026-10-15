@@ -15,7 +15,7 @@ const DEMANDAS_ABA = 'Respostas ao formulário 1';
 const ESQUEMA = {
   Sugestoes:   ['id', 'data', 'tipo', 'titulo', 'link', 'criadoEm', 'status', 'info'],
   Pautas:      ['id', 'data', 'titulo', 'responsavel', 'obs', 'sugestaoId', 'formato', 'link'],
-  Alteracoes:  ['chave', 'data', 'responsavel', 'titulo', 'obs', 'removida', 'feito', 'feitoPor', 'formato', 'link', 'programada']
+  Alteracoes:  ['chave', 'data', 'responsavel', 'titulo', 'obs', 'removida', 'feito', 'feitoPor', 'formato', 'link', 'programada', 'legenda', 'horario', 'colab']
 };
 
 function aba_(nome) {
@@ -29,7 +29,8 @@ function aba_(nome) {
   }
   return sh;
 }
-function txt_(v) {
+function txt_(v, hora) {
+  if (v instanceof Date && hora) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'HH:mm');
   if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
   return v === null || v === undefined ? '' : String(v);
 }
@@ -38,7 +39,7 @@ function ler_(nome) {
   const cab = v[0];
   return v.slice(1).filter(r => r[0] !== '').map(r => {
     const o = {};
-    cab.forEach((k, i) => { o[k] = (k === 'removida' || k === 'feito' || k === 'programada') ? (r[i] === true || r[i] === 'TRUE') : txt_(r[i]); });
+    cab.forEach((k, i) => { o[k] = (k === 'removida' || k === 'feito' || k === 'programada') ? (r[i] === true || r[i] === 'TRUE') : txt_(r[i], k === 'horario'); });
     return o;
   });
 }
@@ -85,6 +86,15 @@ function doPost(e) {
       if (!dataOk_(c.data) || TIPOS.indexOf(c.tipo) < 0 || !c.titulo || String(c.titulo).length > 120 ||
           (c.link && !/^https?:\/\//i.test(c.link)) || String(c.link || '').length > 500) return resp_({ ok: false, erro: 'dados inválidos' });
       aba_('Sugestoes').appendRow([Utilities.getUuid(), c.data, c.tipo, sanear_(c.titulo), c.link || '', new Date().toISOString(), 'pendente', sanear_(String(c.info || '').slice(0, 300))]);
+      return resp_({ ok: true });
+    }
+
+    if (a === 'detalhar') {
+      // legenda, horário e colab: o administrador ou a própria pessoa (só nas pautas dela, sem senha)
+      if (!(ehAdmin_(c) || (ehPessoa_(c) && c.pessoa === c.responsavel))) return resp_({ ok: false, erro: 'senha' });
+      const leg = String(c.legenda || '').trim().slice(0, 2200), hor = String(c.horario || '').trim(), col = String(c.colab || '').trim().slice(0, 100);
+      if (hor && !/^\d{2}:\d{2}$/.test(hor)) return resp_({ ok: false, erro: 'dados inválidos' });
+      upsertAlteracao_(String(c.chave), { legenda: leg, horario: hor, colab: col });
       return resp_({ ok: true });
     }
 

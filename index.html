@@ -163,6 +163,20 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 .pauta .quando{font-size:13px;font-weight:700}
 .pauta .feitopor{font-size:12.5px;color:var(--ink-soft)}
 .progtag{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:#e3f4e8;color:var(--joao)}
+.t-curto{display:none}
+.aviso-leve{margin:0 0 12px;color:var(--ink-soft);font-size:14px}
+.leg .auto{font-size:12.5px;font-weight:700;color:var(--mariana-t);margin-top:2px}
+.leg textarea,.leg input[type=text],.leg input[type=time]{width:100%;font:inherit;font-size:14.5px;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;color:var(--ink)}
+.leg textarea{min-height:110px;resize:vertical;line-height:1.4}
+.leg textarea:focus,.leg input:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+.leg .campos{display:grid;grid-template-columns:150px 1fr;gap:10px}
+.leg .rot{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin:6px 0 4px;display:block}
+.leg .cont{font-size:12px;color:var(--ink-soft);text-align:right;margin-top:2px}
+.leg .botoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.leg .botoes .btn{padding:8px 14px;font-size:14px}
+.leg .salvo{font-size:13px;font-weight:700;color:var(--joao)}
+.leg .lido{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px}
+@media (max-width:860px){.leg .campos{grid-template-columns:1fr}.leg .botoes .btn{flex:1 1 0}}
 a.btn{text-decoration:none;display:inline-block}
 a.btn[hidden]{display:none}
 .dem{padding:14px 16px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:12px;background:#fff;display:grid;gap:6px}
@@ -214,6 +228,8 @@ html,body{overflow-x:hidden}
   .tab{flex:1 0 auto;padding:11px 5px;font-size:12.5px;white-space:nowrap;text-align:center}
   .tab small{margin-left:4px;padding:1px 6px;font-size:11px}
   .day.past{display:none}
+  .t-longo{display:none}
+  .t-curto{display:inline}
   .admbar{flex-wrap:nowrap;align-items:center}
   .admdica{display:none}
   .admbar{font-size:12.5px;padding:8px 12px;margin-top:10px}
@@ -270,6 +286,7 @@ html,body{overflow-x:hidden}
   <div class="tabs" role="tablist">
     <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
     <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount" hidden>0</small></button>
+    <button class="tab" id="tabLeg" role="tab" aria-selected="false" type="button"><span class="t-longo">Dados de postagem</span><span class="t-curto">Postagem</span><small id="legCount" hidden>0</small></button>
     <button class="tab" id="tabProg" role="tab" aria-selected="false" type="button">Programar<small id="progCount" hidden>0</small></button>
     <button class="tab" id="tabDem" role="tab" aria-selected="false" type="button">Demandas<small id="demCount" hidden>0</small></button>
   </div>
@@ -281,6 +298,13 @@ html,body{overflow-x:hidden}
   <div class="grid" id="grid"></div>
   <div class="list" id="list"></div>
   <p class="foot">Clique em um dia para sugerir uma pauta. O cronograma em si só é alterado pela coordenação.</p>
+  </section>
+  <section id="vLeg" hidden>
+    <div class="sughead"><h2>Dados de postagem</h2></div>
+    <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida: é só revisar e salvar.</p>
+    <div class="tfilt" id="legFiltro"></div>
+    <p class="vazio" id="legVazio" hidden>Nada por aqui ainda. Quando uma pauta receber ✓, ela aparece nesta aba.</p>
+    <div id="legLista"></div>
   </section>
   <section id="vProg" hidden>
     <div class="sughead"><h2>Para programar</h2></div>
@@ -563,6 +587,8 @@ const FORMATOS = ["Vídeo","Carrossel","Card","Stories","Foto"];
 const corFormato = f => TIPOS[f] || "--definir";
 function inferirFormato(t, o){
   const x = (t + " " + o).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/^tbt/.test(x)) return "Carrossel";                 // TBT é sempre carrossel
+  if (/semana em 1 min/.test(x)) return "Vídeo";           // A Semana em 1 min é sempre vídeo
   if (/stories/.test(x)) return "Stories";
   if (/carrossel/.test(x)) return "Carrossel";
   if (/video/.test(x)) return "Vídeo";
@@ -581,6 +607,13 @@ function apiLocal(c){
   e.sugestoes = e.sugestoes || []; e.extras = e.extras || []; e.alteracoes = e.alteracoes || [];
   if (c.acao === "sugerir"){
     e.sugestoes.push({id:uid(), data:c.data, tipo:c.tipo, titulo:c.titulo, link:c.link, info:c.info||"", criadoEm:new Date().toISOString(), status:"pendente"});
+  } else if (c.acao === "detalhar"){
+    const okAdm = ADMIN && cyrb53(c.senha || "") === ADMIN_HASH;
+    const okPes = !!USER && c.pessoa === USER && c.responsavel === USER;
+    if (!okAdm && !okPes) throw new Error("senha");
+    let a = e.alteracoes.find(x => x.chave === c.chave);
+    if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
+    a.legenda = c.legenda; a.horario = c.horario; a.colab = c.colab;
   } else if (c.acao === "marcar"){
     const hs = cyrb53(c.senha || "");
     const okAdm = ADMIN && hs === ADMIN_HASH;
@@ -634,9 +667,9 @@ function todosItens(){
   const out = [];
   Object.keys(DATA).forEach(key => DATA[key].forEach(([d,t,o,obs]) => {
     const dt = key + "-" + pad2(d);
-    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false, formato:inferirFormato(t, obs||""), link:"", programada:false});
+    out.push({id:"s:"+dt+":"+cyrb53(t).toString(36), data:dt, titulo:t, owner:o, obs:obs||"", feito:false, formato:inferirFormato(t, obs||""), link:"", programada:false, legenda:"", horario:"", colab:""});
   }));
-  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false, formato:x.formato || "", link:linkOk(x.link) ? x.link : "", programada:false}));
+  EXTRAS.forEach(x => out.push({id:x.id, data:x.data, titulo:x.titulo, owner:x.responsavel || "A definir", obs:x.obs || "", feito:false, formato:x.formato || "", link:linkOk(x.link) ? x.link : "", programada:false, legenda:"", horario:"", colab:""}));
   return out.map(x => {
     const a = ALT[x.id]; if (!a) return x;
     const rem = a.removida === true || a.removida === "TRUE" || a.removida === 1;
@@ -644,14 +677,16 @@ function todosItens(){
       owner:OWNERS[a.responsavel] ? a.responsavel : x.owner, obs:a.obs ? a.obs : x.obs, removida:rem,
       feito:a.feito === true || a.feito === "TRUE" || a.feito === 1,
       programada:a.programada === true || a.programada === "TRUE" || a.programada === 1,
+      legenda:a.legenda != null ? String(a.legenda).trim() : "", horario:a.horario != null ? String(a.horario).trim() : "", colab:a.colab != null ? String(a.colab).trim() : "",
       formato:a.formato ? String(a.formato).trim() : x.formato,
       link:a.link ? (linkOk(String(a.link).trim()) ? String(a.link).trim() : "") : x.link};
   }).filter(x => !x.removida);
 }
+const detAlt = a => [a && a.legenda ? String(a.legenda).trim() : "", a && a.horario ? String(a.horario).trim() : "", a && a.colab ? String(a.colab).trim() : ""];
 function itensDoMes(y, m){
   const key = y + "-" + pad2(m+1);
   const base = todosItens().filter(x => x.data.startsWith(key));
-  const lista = base.map(x => [+x.data.slice(8), x.titulo, x.owner, String(x.obs).trim(), x.id, false, !!x.feito, x.formato || "", x.link || ""]);
+  const lista = base.map(x => [+x.data.slice(8), x.titulo, x.owner, String(x.obs).trim(), x.id, false, !!x.feito, x.formato || "", x.link || "", !!x.programada, x.legenda || "", x.horario || "", x.colab || ""]);
   const dias = new Set(lista.map(x => x[0]));
   const dm = new Date(y, m+1, 0).getDate();
   // fim de semana sem pauta: uma coisa ou outra, alternando. Sábado = vídeo (Wandinho), domingo = foto (João)
@@ -664,8 +699,8 @@ function itensDoMes(y, m){
     const feito = !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1));
     const prog = !!(a && (a.programada === true || a.programada === "TRUE" || a.programada === 1));
     lista.push(w === 6
-      ? [d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Vídeo", "", prog]
-      : [d, "Final de semana", "João", "Foto Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Foto", "", prog]);
+      ? [d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Vídeo", "", prog, ...detAlt(a)]
+      : [d, "Final de semana", "João", "Foto Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Foto", "", prog, ...detAlt(a)]);
   }
   // toda sexta tem "A Semana em 1 min" (João), a menos que já esteja cadastrada nesse dia
   for (let d=1; d<=dm; d++){
@@ -676,7 +711,7 @@ function itensDoMes(y, m){
     if (a && (a.removida === true || a.removida === "TRUE" || a.removida === 1)) continue;
     const feito = !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1));
     const prog = !!(a && (a.programada === true || a.programada === "TRUE" || a.programada === 1));
-    lista.push([d, "A Semana em 1 min", "João", "Produzir vídeo. Padrão de toda sexta.", id, true, feito, "Vídeo", "", prog]);
+    lista.push([d, "A Semana em 1 min", "João", "Produzir vídeo. Padrão de toda sexta.", id, true, feito, "Vídeo", "", prog, ...detAlt(a)]);
   }
   // toda última quinta do mês: TBT do mês (Isabela), a menos que já esteja cadastrado
   let ultQuinta = 0;
@@ -687,10 +722,107 @@ function itensDoMes(y, m){
     if (!(a && (a.removida === true || a.removida === "TRUE" || a.removida === 1))){
       const feito = !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1));
       const prog = !!(a && (a.programada === true || a.programada === "TRUE" || a.programada === 1));
-      lista.push([ultQuinta, "TBT do mês de " + MESES[m].toLowerCase(), "Isabela", "Produzir. Padrão da última quinta do mês.", id, true, feito, "", "", prog]);
+      lista.push([ultQuinta, "TBT do mês de " + MESES[m].toLowerCase(), "Isabela", "Produzir carrossel. Padrão da última quinta do mês.", id, true, feito, "Carrossel", "", prog, ...detAlt(a)]);
     }
   }
   return {lista, reais: base.length};
+}
+
+// ---------- Dados de postagem: legenda, horário e colab (depois do ✓) ----------
+let legFiltro = "todas", legSujo = false;
+const semAc = t => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "");
+function hashtagDe(t){
+  const ign = /^(dia|mundial|nacional|internacional|para|das|dos|com|que|nas|nos|uma|neste|nesta|de|da|do|em|e|o|a|as|os)$/i;
+  const p = semAc(t).replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(w => w.length > 2 && !ign.test(w)).slice(0, 3);
+  return p.length ? "#" + p.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join("") : "";
+}
+// Legenda sugerida automaticamente a partir do título, do formato e das informações da pauta
+function gerarLegenda(titulo, formato, info){
+  const t = String(titulo || "").trim(), x = semAc(t + " " + (info || "")).toLowerCase(), tl = semAc(t).toLowerCase();
+  const util = String(info || "").split(/\.\s+/).map(z => z.trim()).filter(z => z && !/^(produzir|gravar|card|post|verificar|mudar|meme|video|foto|padrao|demanda|objetivo|formato|prazo|vídeo|stories|carrossel)/i.test(semAc(z))).join(". ");
+  const base = ["#Anchieta", "#PrefeituraDeAnchieta"];
+  const fecha = (extra) => "\n\n" + [...extra, ...base].filter(Boolean).filter((v,i,a) => a.indexOf(v) === i).join(" ");
+  if (/semana em 1 min/.test(tl)) return "A Semana em 1 minuto chegou! 📅\nTudo o que aconteceu de mais importante em Anchieta, em um vídeo rápido para você ficar por dentro. Assista e compartilhe! 💚" + fecha(["#ASemanaEm1Minuto"]);
+  if (/^tbt/.test(tl)) return "#TBT " + t.replace(/^tbt\s*/i, "").trim() + " 🎞️\nRelembre os melhores momentos vividos em Anchieta. Qual foi o seu preferido? Conta pra gente nos comentários! 💬" + fecha(["#TBT"]);
+  if (/final de semana|turismo/.test(tl) || /turismo/.test(x)) return "Anchieta tem cenários que encantam! 🌊☀️\nBelas praias, história e natureza para curtir com a família e os amigos. Venha viver o melhor do litoral capixaba! 📍 Anchieta – ES" + fecha(["#TurismoAnchieta", "#VisiteAnchieta"]);
+  if (/natal/.test(tl)) return "Feliz Natal! 🎄✨\nQue este seja um tempo de paz, esperança e união. A Prefeitura de Anchieta deseja a todos os anchietenses um Natal abençoado, cheio de amor e alegria! ❤️" + fecha(["#FelizNatal"]);
+  if (/ano novo|confraternizacao universal|reveillon/.test(tl)) return "Feliz Ano Novo! 🎆🥂\nQue 2027 traga saúde, trabalho e muitas conquistas para todos nós. A Prefeitura de Anchieta agradece a parceria de cada morador e deseja um novo ano de realizações! 💚" + fecha(["#FelizAnoNovo"]);
+  if (/pascoa/.test(tl)) return "Feliz Páscoa! 🐰🍫\nQue esta data traga renovação, paz e momentos especiais ao lado de quem você ama. A Prefeitura de Anchieta deseja a todos uma Páscoa abençoada!" + fecha(["#FelizPascoa"]);
+  if (/carnaval/.test(tl)) return "É Carnaval! 🎭🎉\nAproveite com alegria e responsabilidade. Beba água, use protetor solar e cuide uns dos outros. Bom Carnaval, Anchieta!" + fecha(["#Carnaval"]);
+  if (/dia das maes/.test(tl)) return "Feliz Dia das Mães! 💐💚\nHoje celebramos o amor, a força e a dedicação de todas as mães. A Prefeitura de Anchieta homenageia essas mulheres que fazem a diferença na vida de tantas famílias." + fecha(["#DiaDasMaes"]);
+  if (/dia dos pais/.test(tl)) return "Feliz Dia dos Pais! 👨‍👧‍👦💙\nUma homenagem a todos os pais e figuras paternas pelo carinho, pelo exemplo e pela presença. A Prefeitura de Anchieta deseja a vocês um dia muito especial!" + fecha(["#DiaDosPais"]);
+  if (/dia das criancas/.test(tl)) return "Feliz Dia das Crianças! 🎈🧸\nQue a alegria e a curiosidade de cada criança nos lembrem todos os dias de cuidar do futuro. A Prefeitura de Anchieta deseja um dia cheio de diversão!" + fecha(["#DiaDasCriancas"]);
+  if (/aniversario de anchieta/.test(tl)) return "Parabéns, Anchieta! 🎉💚\nUma cidade de história, belezas naturais e gente acolhedora. Que sigamos juntos construindo um futuro ainda melhor para todos! 📍 Anchieta – ES" + fecha(["#AnchietaAniversario"]);
+  if (/(outubro rosa|novembro azul|setembro amarelo|maio amarelo|agosto dourado|marco lilas|abril azul|janeiro branco|dezembro vermelho|fevereiro laranja|agosto lilas|maio laranja|junho vermelho)/.test(tl))
+    return t.replace(/:.*/, "") + " 💗\n" + (util ? util + ". " : "") + "Informação e cuidado salvam vidas. Procure a unidade de saúde mais próxima e compartilhe essa mensagem!" + fecha([hashtagDe(t.replace(/:.*/, ""))]);
+  if (/^dia (do|da|de|dos|das|mundial|nacional|internacional)/.test(tl)) return "Hoje é " + t + "! 🎉\n" + (util ? util + ". " : "") + "A Prefeitura de Anchieta reconhece e valoriza essa data. Compartilhe com quem merece essa homenagem! 💚" + fecha([hashtagDe(t)]);
+  if (/festival|evento|feira|mostra|caminhada|corrida/.test(tl)) return t + "! 🦐🎶\n" + (util ? util + ". " : "") + "Venha participar e viver essa experiência em Anchieta. Esperamos você! 📍 Anchieta – ES" + fecha([hashtagDe(t)]);
+  return t + " 📢\n" + (util ? util + "\n" : "Fique por dentro das novidades da Prefeitura de Anchieta. ") + "\nAcompanhe nossas redes e compartilhe com quem precisa saber! 💚" + fecha([hashtagDe(t)]);
+}
+const dadosPreenchidos = x => !!(x.legenda && x.horario);
+const pendentesDados = () => listaProgramar().filter(x => !dadosPreenchidos(x));
+function renderLeg(){
+  const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
+  const fl = document.getElementById("legFiltro"); fl.textContent = "";
+  const todos = listaProgramar();
+  [["todas","Todas", todos.length],["pend","A preencher", todos.filter(x => !dadosPreenchidos(x)).length],["ok","Preenchidas", todos.filter(dadosPreenchidos).length]].forEach(([k,t,n]) => {
+    const c = h("button","chip",t); c.type = "button"; c.setAttribute("aria-pressed", String(legFiltro === k));
+    c.appendChild(h("small",null,String(n)));
+    c.addEventListener("click", () => { legFiltro = k; legSujo = false; renderLeg(); });
+    fl.appendChild(c);
+  });
+  lista.textContent = "";
+  const itens = todos.filter(x => legFiltro === "todas" || (legFiltro === "pend" ? !dadosPreenchidos(x) : dadosPreenchidos(x)));
+  vazio.hidden = itens.length > 0;
+  itens.forEach(x => {
+    const pode = !!(ADMIN || (USER && x.owner === USER));
+    const c = h("div","pauta leg"); corVars(c, OWNERS[x.owner]);
+    const top = h("div","pautatop");
+    const [yy,mm,dd] = x.data.split("-").map(Number);
+    top.appendChild(h("span","resp", fmtDia(x.data) + " (" + DOW[new Date(yy, mm-1, dd).getDay()] + ") · " + (x.owner === "A definir" ? "responsável a definir" : x.owner)));
+    if (x.formato){ const t = h("span","tag",x.formato); corVars(t, corFormato(x.formato)); top.appendChild(t); }
+    c.appendChild(top);
+    c.appendChild(h("strong",null,x.titulo));
+    const sugerida = gerarLegenda(x.titulo, x.formato, x.obs);
+    if (!pode){
+      c.appendChild(h("span","rot","Legenda")); c.appendChild(h("div","lido", x.legenda || "—"));
+      const g = h("div","campos");
+      const a1 = h("div"); a1.appendChild(h("span","rot","Horário")); a1.appendChild(h("div","lido", x.horario || "—"));
+      const a2 = h("div"); a2.appendChild(h("span","rot","Colab")); a2.appendChild(h("div","lido", x.colab || "—"));
+      g.appendChild(a1); g.appendChild(a2); c.appendChild(g);
+      lista.appendChild(c); return;
+    }
+    const ta = h("textarea"); ta.maxLength = 2200; ta.value = x.legenda || sugerida; ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
+    const cont = h("div","cont", ta.value.length + "/2200");
+    c.appendChild(h("span","rot","Legenda"));
+    if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
+    c.appendChild(ta); c.appendChild(cont);
+    const g = h("div","campos");
+    const w1 = h("div"); w1.appendChild(h("span","rot","Horário da postagem"));
+    const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
+    const w2 = h("div"); w2.appendChild(h("span","rot","Colab (perfil que divide o post)"));
+    const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
+    g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
+    const bt = h("div","botoes"); const sv = h("button","btn pri","Salvar"); sv.type = "button";
+    const gr = h("button","btn","Gerar legenda de novo"); gr.type = "button";
+    const cp = h("button","btn","Copiar legenda"); cp.type = "button"; const ok = h("span","salvo");
+    bt.appendChild(sv); bt.appendChild(gr); bt.appendChild(cp); bt.appendChild(ok); c.appendChild(bt);
+    const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
+    [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
+    gr.addEventListener("click", () => { ta.value = sugerida; sujo(); });
+    cp.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(ta.value); ok.textContent = "Copiada"; } catch(e){ ta.select(); ok.textContent = "Selecione e copie"; }
+    });
+    sv.addEventListener("click", async () => {
+      if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
+      sv.disabled = true; ok.textContent = "Salvando...";
+      try {
+        await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:ta.value.trim() || " ", horario:hr.value, colab:co.value.trim() || " "});
+        legSujo = false; await carregarEstado();
+      } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
+    });
+    lista.appendChild(c);
+  });
 }
 
 // ---------- Programar: pautas marcadas ✓ aguardando programação ----------
@@ -702,18 +834,18 @@ function listaProgramar(){
     if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
     {
       const sab = new Date(+k.slice(2,6), +k.slice(7,9)-1, +k.slice(10,12)).getDay() === 6;
-      l.push({id:k, data:k.slice(2), titulo:"Final de semana", owner:sab ? "Wandinho" : "João", obs:(sab ? "Vídeo" : "Foto") + " Turismo. Padrão de fim de semana sem pauta.", formato:sab ? "Vídeo" : "Foto", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+      l.push({id:k, data:k.slice(2), titulo:"Final de semana", owner:sab ? "Wandinho" : "João", obs:(sab ? "Vídeo" : "Foto") + " Turismo. Padrão de fim de semana sem pauta.", formato:sab ? "Vídeo" : "Foto", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada), legenda:a.legenda ? String(a.legenda).trim() : "", horario:a.horario ? String(a.horario).trim() : "", colab:a.colab ? String(a.colab).trim() : ""});
     }
   });
   Object.keys(ALT).filter(k => k.startsWith("f:")).forEach(k => {
     const a = ALT[k];
     if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
-      l.push({id:k, data:k.slice(2), titulo:"A Semana em 1 min", owner:"João", obs:"Produzir vídeo. Padrão de toda sexta.", formato:"Vídeo", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+      l.push({id:k, data:k.slice(2), titulo:"A Semana em 1 min", owner:"João", obs:"Produzir vídeo. Padrão de toda sexta.", formato:"Vídeo", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada), legenda:a.legenda ? String(a.legenda).trim() : "", horario:a.horario ? String(a.horario).trim() : "", colab:a.colab ? String(a.colab).trim() : ""});
   });
   Object.keys(ALT).filter(k => k.startsWith("t:")).forEach(k => {
     const a = ALT[k];
     if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
-      l.push({id:k, data:k.slice(2), titulo:"TBT do mês de " + MESES[+k.slice(7,9)-1].toLowerCase(), owner:"Isabela", obs:"Produzir. Padrão da última quinta do mês.", formato:"", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+      l.push({id:k, data:k.slice(2), titulo:"TBT do mês de " + MESES[+k.slice(7,9)-1].toLowerCase(), owner:"Isabela", obs:"Produzir carrossel. Padrão da última quinta do mês.", formato:"Carrossel", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada), legenda:a.legenda ? String(a.legenda).trim() : "", horario:a.horario ? String(a.horario).trim() : "", colab:a.colab ? String(a.colab).trim() : ""});
   });
   return l.sort((a,b) => a.data.localeCompare(b.data));
 }
@@ -741,7 +873,10 @@ function cardProg(x){
   c.appendChild(linhaPauta("Título", x.titulo, false));
   c.appendChild(linhaPauta("Link de referência", x.link, true));
   c.appendChild(linhaPauta("Informações", String(x.obs || "").trim(), false));
-  if (x.feitoPor) c.appendChild(h("div","feitopor","Marcada como feita por " + (x.feitoPor === "Admin" ? "abacaxi" : x.feitoPor)));
+  c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", x.legenda || gerarLegenda(x.titulo, x.formato, x.obs), false));
+  c.appendChild(linhaPauta("Horário", x.horario, false));
+  c.appendChild(linhaPauta("Colab", x.colab, false));
+  if (x.feitoPor) c.appendChild(h("div","feitopor","Marcada como feita por " + (x.feitoPor === "Admin" ? "João" : x.feitoPor)));
   return c;
 }
 function renderProg(){
@@ -832,6 +967,11 @@ function pautaEl(it){
   c.appendChild(linhaPauta("Título", titulo, false));
   c.appendChild(linhaPauta("Link de referência", link, true));
   c.appendChild(linhaPauta("Informações", info, false));
+  if (it[10] || it[11] || it[12]){
+    c.appendChild(linhaPauta("Legenda", it[10], false));
+    c.appendChild(linhaPauta("Horário", it[11], false));
+    c.appendChild(linhaPauta("Colab", it[12], false));
+  }
   return c;
 }
 function renderDia(){
@@ -980,6 +1120,8 @@ function atualizar(){
   setMonth(CUR, true);
   renderSug();
   renderProg();
+  contador("legCount", pendentesDados().length);
+  if (!document.getElementById("vLeg").hidden && !legSujo) renderLeg();
   if (document.getElementById("dlgDia").open) renderDia();
 }
 function buildMonths(){
@@ -1142,13 +1284,14 @@ function openDlg(d){
   if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open","");
 }
 function showTab(which){
-  const abas = {cal:["vCal","tabCal"], prog:["vProg","tabProg"], sug:["vSug","tabSug"], dem:["vDem","tabDem"]};
+  const abas = {cal:["vCal","tabCal"], leg:["vLeg","tabLeg"], prog:["vProg","tabProg"], sug:["vSug","tabSug"], dem:["vDem","tabDem"]};
   Object.keys(abas).forEach(k => {
     document.getElementById(abas[k][0]).hidden = k !== which;
     document.getElementById(abas[k][1]).setAttribute("aria-selected", String(k === which));
   });
   if (which === "sug") carregarEstado();
   if (which === "dem") carregarDemandas();
+  if (which === "leg"){ legSujo = false; renderLeg(); }
 }
 // ---------- Demandas (respostas do formulário, via Apps Script) ----------
 let DEMS = [], demNivel = null;
@@ -1251,6 +1394,7 @@ function initSug(){
   document.getElementById("sugRefresh").addEventListener("click", carregarEstado);
   document.getElementById("tabDem").addEventListener("click", () => showTab("dem"));
   document.getElementById("tabProg").addEventListener("click", () => showTab("prog"));
+  document.getElementById("tabLeg").addEventListener("click", () => showTab("leg"));
   document.getElementById("demRefresh").addEventListener("click", carregarDemandas);
   document.getElementById("sugCancel").addEventListener("click", () => document.getElementById("dlg").close());
   document.getElementById("sugForm").addEventListener("submit", async e => {
