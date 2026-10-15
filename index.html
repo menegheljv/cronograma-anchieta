@@ -380,16 +380,14 @@ const OUT_2026 = [
 [21,"Dia Nacional da Alimentação na Escola","João","Produzir card feed"],
 [22,"Aulas de música nas escolas de Anchieta","Wandinho","Produzir vídeo"],
 [23,"A Semana em 1 min","João","Produzir vídeo"],
-[24,"Foto Turismo","João",""],
-[24,"Vídeo Turismo","Wandinho",""],
+,
 [25,"Dia do Dentista","Renata","Card stories"],
 [26,"Dia do Trabalhador da Construção Civil","Marcos","Produzir vídeo"],
 [27,"Você conhece um local que precisa de um PEV?","Isabela","Produzir card feed"],
 [28,"Dia do Servidor Público","Isabela","Produzir card feed"],
 [29,"TBT do mês de outubro","Isabela","Produzir"],
 [30,"A Semana em 1 min","João","Produzir vídeo"],
-[31,"Foto Turismo","João",""],
-[31,"Vídeo Turismo","Wandinho",""]
+
 ];
 // Pautas por mês, chave "AAAA-MM". Meses sem chave aparecem vazios.
 const DATA = {
@@ -613,12 +611,18 @@ function itensDoMes(y, m){
   const lista = base.map(x => [+x.data.slice(8), x.titulo, x.owner, String(x.obs).trim(), x.id, false, !!x.feito, x.formato || "", x.link || ""]);
   const dias = new Set(lista.map(x => x[0]));
   const dm = new Date(y, m+1, 0).getDate();
-  // regra: fim de semana sem pauta vira Vídeo Turismo (Wandinho)
+  // fim de semana sem pauta: uma coisa ou outra, alternando. Sábado = vídeo (Wandinho), domingo = foto (João)
   for (let d=1; d<=dm; d++){
     const w = new Date(y, m, d).getDay();
+    if ((w !== 0 && w !== 6) || dias.has(d)) continue;
     const id = "w:" + key + "-" + pad2(d);
-    const a = ALT[id], rem = a && (a.removida === true || a.removida === "TRUE" || a.removida === 1);
-    if ((w===0 || w===6) && !dias.has(d) && !rem) lista.push([d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1)), "Vídeo", ""]);
+    const a = ALT[id];
+    if (a && (a.removida === true || a.removida === "TRUE" || a.removida === 1)) continue;
+    const feito = !!(a && (a.feito === true || a.feito === "TRUE" || a.feito === 1));
+    const prog = !!(a && (a.programada === true || a.programada === "TRUE" || a.programada === 1));
+    lista.push(w === 6
+      ? [d, "Final de semana", "Wandinho", "Vídeo Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Vídeo", "", prog]
+      : [d, "Final de semana", "João", "Foto Turismo. Padrão de fim de semana sem pauta.", id, true, feito, "Foto", "", prog]);
   }
   return {lista, reais: base.length};
 }
@@ -630,7 +634,10 @@ function listaProgramar(){
   Object.keys(ALT).filter(k => k.startsWith("w:")).forEach(k => {
     const a = ALT[k];
     if (ehVerdade(a.feito) && !ehVerdade(a.removida) && dataOk(k.slice(2)))
-      l.push({id:k, data:k.slice(2), titulo:"Final de semana", owner:"Wandinho", obs:"Vídeo Turismo. Padrão de fim de semana sem pauta.", formato:"Vídeo", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+    {
+      const sab = new Date(+k.slice(2,6), +k.slice(7,9)-1, +k.slice(10,12)).getDay() === 6;
+      l.push({id:k, data:k.slice(2), titulo:"Final de semana", owner:sab ? "Wandinho" : "João", obs:(sab ? "Vídeo" : "Foto") + " Turismo. Padrão de fim de semana sem pauta.", formato:sab ? "Vídeo" : "Foto", link:"", feito:true, feitoPor:a.feitoPor || "", programada:ehVerdade(a.programada)});
+    }
   });
   return l.sort((a,b) => a.data.localeCompare(b.data));
 }
