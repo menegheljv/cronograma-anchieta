@@ -171,7 +171,7 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 .arrobas .rot{font-size:12.5px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:8px}
 .arrobas-lista,.arrobas-chips{display:flex;flex-wrap:wrap;gap:6px}
 .arrobas-add{display:flex;gap:8px;margin-top:10px}
-.arrobas-add input{flex:1;min-width:0;font:inherit;font-size:14.5px;padding:9px 12px;border:1.5px solid var(--border);border-radius:12px}
+.arrobas-add input{flex:1 1 0;min-width:0;font:inherit;font-size:14.5px;padding:9px 12px;border:1.5px solid var(--border);border-radius:12px}
 .arrobas-add .btn{padding:8px 14px;font-size:14px}
 .arrobas-chips{margin-top:6px}
 .arr{font:inherit;font-size:13px;font-weight:600;padding:5px 11px;border:1.5px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer}
@@ -319,6 +319,7 @@ html,body{overflow-x:hidden}
       <span class="rot">Arrobas prontos (aparecem como botões no campo Colab)</span>
       <div class="arrobas-lista" id="arrobasLista"></div>
       <form class="arrobas-add" id="arrobasForm" autocomplete="off">
+        <input id="arrobaNome" type="text" placeholder="Nome do botão (ex.: Saúde)" maxlength="24" aria-label="Nome do botão">
         <input id="arrobaNovo" type="text" placeholder="@perfil" maxlength="40" autocapitalize="off" aria-label="Novo arroba">
         <button class="btn" type="submit">Adicionar</button>
       </form>
@@ -903,15 +904,23 @@ function variarLegenda(base, n){
   return corpo.replace(/\n+$/, "") + "\n" + extra + tags;
 }
 // ---------- Arrobas prontos (para o campo Colab) ----------
-const ARROBAS_BASE = ["@santuariodeanchieta"];   // único perfil confirmado; a coordenação cadastra os outros no painel da aba
+// Cada botão tem um nome (rótulo) e o arroba que ele cola no campo. A coordenação cadastra mais no painel da aba.
+const ARROBAS_BASE = [{r:"Turismo", a:"@turismoanchieta"}, {r:"Saúde", a:"@saudeanchieta"}];
 const normArroba = a => { a = String(a || "").trim().toLowerCase().replace(/^@+/, "").replace(/[^a-z0-9._]/g, ""); return a ? "@" + a : ""; };
-function arrobasProntos(){
+const limpaRotulo = r => String(r || "").replace(/[;=]/g, " ").replace(/\s+/g, " ").trim().slice(0, 24);
+function arrobasCustom(){
   const salvo = ALT["cfg:arrobas"] ? String(ALT["cfg:arrobas"].obs || "") : "";
-  return [...new Set([...ARROBAS_BASE, ...salvo.split(/[\s,]+/).map(normArroba).filter(Boolean)])];
+  return salvo.split(";").map(e => {
+    const [r, a] = e.includes("=") ? e.split("=") : [e, e];
+    const arr = normArroba(a); return arr ? {r:limpaRotulo(r) || arr, a:arr} : null;
+  }).filter(Boolean);
 }
-const arrobasCustom = () => arrobasProntos().filter(a => !ARROBAS_BASE.includes(a));
+function arrobasProntos(){
+  const todos = [...ARROBAS_BASE.map(x => ({...x, base:true})), ...arrobasCustom()];
+  return todos.filter((x,i,arr) => arr.findIndex(y => y.a === x.a) === i);
+}
 async function salvarArrobas(lista){
-  await post({acao:"alterar", chave:"cfg:arrobas", obs:lista.join(" ") || " "});
+  await post({acao:"alterar", chave:"cfg:arrobas", obs:lista.map(x => x.r + "=" + x.a).join(";") || " "});
   await carregarEstado();
 }
 function renderArrobasPainel(){
@@ -919,11 +928,12 @@ function renderArrobasPainel(){
   painel.hidden = !ADMIN;
   if (!ADMIN) return;
   const box = document.getElementById("arrobasLista"); box.textContent = "";
-  arrobasProntos().forEach(a => {
-    const c = h("button","arr",a); c.type = "button";
-    if (!ARROBAS_BASE.includes(a)){
-      c.appendChild(h("span","x","×")); c.title = "Remover";
-      c.addEventListener("click", async () => { try { await salvarArrobas(arrobasCustom().filter(z => z !== a)); } catch(e){ alert(msgErro(e)); } });
+  arrobasProntos().forEach(x => {
+    const c = h("button","arr", x.r); c.type = "button"; c.title = x.a;
+    c.appendChild(h("span","x"," " + x.a));
+    if (!x.base){
+      c.appendChild(h("span","x","×")); c.title = x.a + " (clique para remover)";
+      c.addEventListener("click", async () => { try { await salvarArrobas(arrobasCustom().filter(z => z.a !== x.a)); } catch(e){ alert(msgErro(e)); } });
     } else c.disabled = true;
     box.appendChild(c);
   });
@@ -931,10 +941,12 @@ function renderArrobasPainel(){
 function iniciarArrobasForm(){
   document.getElementById("arrobasForm").addEventListener("submit", async e => {
     e.preventDefault();
-    const inp = document.getElementById("arrobaNovo"), a = normArroba(inp.value);
+    const inp = document.getElementById("arrobaNovo"), nome = document.getElementById("arrobaNome"), a = normArroba(inp.value);
     if (!a) return;
-    try { await salvarArrobas([...arrobasCustom(), a].filter((v,i,arr) => arr.indexOf(v) === i)); inp.value = ""; }
-    catch(err){ alert(msgErro(err)); }
+    try {
+      await salvarArrobas([...arrobasCustom().filter(z => z.a !== a), {r:limpaRotulo(nome.value) || a, a}]);
+      inp.value = ""; nome.value = "";
+    } catch(err){ alert(msgErro(err)); }
   });
 }
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
@@ -995,8 +1007,9 @@ function renderLeg(){
     const chips = h("div","arrobas-chips");
     const atual = () => co.value.split(/[\s,]+/).map(normArroba).filter(Boolean);
     const pintar = () => chips.querySelectorAll(".arr").forEach(b => b.setAttribute("aria-pressed", String(atual().includes(b.dataset.a))));
-    arrobasProntos().forEach(a => {
-      const b = h("button","arr",a); b.type = "button"; b.dataset.a = a;
+    arrobasProntos().forEach(x => {
+      const a = x.a;
+      const b = h("button","arr", x.r); b.type = "button"; b.dataset.a = a; b.title = a;
       b.addEventListener("click", () => {
         const l = atual();
         co.value = (l.includes(a) ? l.filter(z => z !== a) : [...l, a]).join(", ");
