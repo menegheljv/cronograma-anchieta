@@ -934,7 +934,7 @@ async function salvarArrobas(lista, atualizarTela = true){
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
 const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
-const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso());
+const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso() && !semLegenda(x.formato));   // Stories não passa por aqui: vai direto para Programar
 const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
 function renderLeg(){
   const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
@@ -967,7 +967,7 @@ function renderLeg(){
       // dados já salvos: aparece o resumo, e quem pode editar vê o botão Editar
       c.appendChild(linhaPauta("Legenda", semLegenda(x.formato) ? "Stories não leva legenda." : x.legenda, false));
       c.appendChild(linhaPauta("Horário", x.horario, false));
-      c.appendChild(linhaPauta("Colab", x.colab, false));
+      if (!semLegenda(x.formato)) c.appendChild(linhaPauta("Colab", x.colab, false));
       if (pode){
         const ed = h("button","btn","Editar"); ed.type = "button";
         ed.addEventListener("click", () => { editandoLeg.add(x.id); legSujo = true; renderLeg(); });
@@ -980,13 +980,14 @@ function renderLeg(){
       const g = h("div","campos");
       const a1 = h("div"); a1.appendChild(h("span","rot","Horário")); a1.appendChild(h("div","lido", x.horario || "—"));
       const a2 = h("div"); a2.appendChild(h("span","rot","Colab")); a2.appendChild(h("div","lido", x.colab || "—"));
+      if (semLegenda(x.formato)) a2.hidden = true;
       g.appendChild(a1); g.appendChild(a2); c.appendChild(g);
       lista.appendChild(c); return;
     }
     const sem = semLegenda(x.formato);
     const ta = h("textarea"); ta.maxLength = 2200; ta.value = sem ? "" : (x.legenda || sugerida); ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
     const cont = h("div","cont", ta.value.length + "/2200");
-    if (sem){ c.appendChild(h("div","auto","Stories não leva legenda: preencha só o horário e o colab.")); }
+    if (sem){ c.appendChild(h("div","auto","Stories não leva legenda: preencha só o horário.")); }
     else {
       c.appendChild(h("span","rot","Legenda"));
       if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
@@ -1050,7 +1051,7 @@ function renderLeg(){
       });
       w2.appendChild(chips); w2.appendChild(form);
     } else w2.appendChild(chips);
-    g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
+    g.appendChild(w1); if (!sem) g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
     bt.appendChild(sv);
     if (dadosPreenchidos(x)){
@@ -1065,7 +1066,7 @@ function renderLeg(){
       if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
       sv.disabled = true; ok.textContent = "Salvando...";
       try {
-        await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:co.value.trim() || " "});
+        await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:sem ? " " : (co.value.trim() || " ")});
         editandoLeg.delete(x.id); legSujo = false; await carregarEstado();
       } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
     });
@@ -1122,9 +1123,11 @@ function cardProg(x, postada){
   c.appendChild(linhaPauta("Título", x.titulo, false));
   c.appendChild(linhaPauta("Link de referência", x.link, true));
   c.appendChild(linhaPauta("Informações", String(x.obs || "").trim(), false));
-  c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", semLegenda(x.formato) ? "Stories não leva legenda." : (x.legenda || gerarLegenda(x.titulo, x.formato, x.obs)), false));
-  c.appendChild(linhaPauta("Horário", x.horario, false));
-  c.appendChild(linhaPauta("Colab", x.colab, false));
+  if (!semLegenda(x.formato)){   // Stories: sem legenda, horário nem colab
+    c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", x.legenda || gerarLegenda(x.titulo, x.formato, x.obs), false));
+    c.appendChild(linhaPauta("Horário", x.horario, false));
+    c.appendChild(linhaPauta("Colab", x.colab, false));
+  }
   if (x.feitoPor) c.appendChild(h("div","feitopor","Marcada como feita por " + (x.feitoPor === "Admin" ? "João" : x.feitoPor)));
   return c;
 }
