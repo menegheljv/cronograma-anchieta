@@ -174,6 +174,11 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 .arrobas-add input{flex:1 1 0;min-width:0;font:inherit;font-size:14.5px;padding:9px 12px;border:1.5px solid var(--border);border-radius:12px}
 .arrobas-add .btn{padding:8px 14px;font-size:14px}
 .arrobas-chips{margin-top:6px}
+.opcoes{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:4px 0 6px}
+.opcao{font:inherit;text-align:left;padding:10px 12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.opcao b{font-size:12px;color:var(--ink-soft)}
+.opcao span{font-size:13px;line-height:1.35;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.opcao:hover,.opcao[aria-pressed="true"]{border-color:var(--accent);background:#fff7fa}
 .arr{font:inherit;font-size:13px;font-weight:600;padding:5px 11px;border:1.5px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer}
 .arr[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
 .arr .x{margin-left:7px;font-weight:800;opacity:.6}
@@ -314,7 +319,7 @@ html,body{overflow-x:hidden}
   </section>
   <section id="vLeg" hidden>
     <div class="sughead"><h2>Dados de postagem</h2></div>
-    <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida: é só revisar e salvar. Você pode editar de novo quando quiser, até a pauta ser programada.</p>
+    <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida, com outras opções para clicar. Você pode editar de novo quando quiser, até a pauta ser programada.</p>
     <div class="arrobas" id="arrobasPainel" hidden>
       <span class="rot">Arrobas prontos (aparecem como botões no campo Colab)</span>
       <div class="arrobas-lista" id="arrobasLista"></div>
@@ -894,15 +899,24 @@ const CHAMADAS = {
   serio: ["Compartilhe esta informação: ela pode ajudar alguém. 🤝", "Salve este post e envie para quem precisa. 🔖", "Informação protege. Compartilhe! 📲", "Em caso de dúvida, procure a unidade de saúde ou o serviço indicado. 💚"],
   neutro: ["Compartilhe com quem precisa saber! 📲", "Marque alguém que precisa ver isso! 👇", "Conta pra gente o que você acha nos comentários! 💬", "Salve este post para consultar depois. 🔖"]
 };
+const ABERTURAS = {
+  festivo: ["", "Um recado especial da Prefeitura de Anchieta 💚", "Com carinho, de Anchieta para você 💛", "Hoje o dia é de celebrar! ✨", "Olha só que data especial! 👀"],
+  serio: ["", "Informação importante 💙", "Atenção, Anchieta 💛", "Vale a pena ler até o fim 👇", "Cuidar é com a gente 🤍"],
+  neutro: ["", "Atenção, Anchieta! 📢", "Olha só! 👀", "Fique por dentro! 💚", "Anote aí! ✍️"]
+};
+function tomLegenda(base){
+  return /Denuncie|Disque|Ligue|CVV|câncer|cancer|violência|suicíd|Finados|Bullying|HIV|saúde mental|Saúde mental/i.test(base) ? "serio"
+    : /Feliz|Parabéns|Homenagem|homenagem|Obrigado|Hoje é/i.test(base) ? "festivo" : "neutro";
+}
 function variarLegenda(base, n){
   if (!base || !n) return base;
   const k = base.lastIndexOf("\n\n#");
   const corpo = k >= 0 ? base.slice(0, k) : base, tags = k >= 0 ? base.slice(k) : "";
-  const tom = /Denuncie|Disque|Ligue|CVV|câncer|cancer|violência|suicíd|Finados|Bullying|HIV|saúde mental|Saúde mental/i.test(base) ? "serio"
-    : /Feliz|Parabéns|Homenagem|homenagem|Obrigado|Hoje é/i.test(base) ? "festivo" : "neutro";
-  const pool = CHAMADAS[tom], extra = pool[(n - 1) % pool.length];
-  return corpo.replace(/\n+$/, "") + "\n" + extra + tags;
+  const tom = tomLegenda(base), pool = CHAMADAS[tom], ab = ABERTURAS[tom][n % ABERTURAS[tom].length];
+  const extra = pool[(n - 1) % pool.length];
+  return (ab ? ab + "\n" : "") + corpo.replace(/\n+$/, "") + "\n" + extra + tags;
 }
+const HORARIOS_PRONTOS = ["08:00", "12:00", "18:00", "20:00"];
 // ---------- Arrobas prontos (para o campo Colab) ----------
 // Cada botão tem um nome (rótulo) e o arroba que ele cola no campo. A coordenação cadastra mais no painel da aba.
 const ARROBAS_BASE = [{r:"Turismo", a:"@turismoanchieta"}, {r:"Saúde", a:"@saudeanchieta"}, {r:"Educação", a:"@seme_anchieta"}, {r:"Esporte e Juventude", a:"@semej.anchieta"}, {r:"GOBEA", a:"@gobea_anchieta"}, {r:"Guarda Municipal", a:"@gcmanchieta"}, {r:"Centro dos Idosos", a:"@centrodosidosos_anchieta"}, {r:"Assistência", a:"@semads_anchieta"}];
@@ -998,10 +1012,32 @@ function renderLeg(){
       c.appendChild(h("span","rot","Legenda"));
       if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
       c.appendChild(ta); c.appendChild(cont);
+      // várias opções de legenda: é só clicar para usar
+      c.appendChild(h("span","rot","Outras opções de legenda (clique para usar)"));
+      const ops = h("div","opcoes");
+      [0,1,2,3,4].forEach(n => {
+        const txt = variarLegenda(sugerida, n);
+        const o = h("button","opcao"); o.type = "button";
+        o.appendChild(h("b",null,n ? "Opção " + (n + 1) : "Opção 1 (original)"));
+        o.appendChild(h("span",null,txt.split("\n\n#")[0]));
+        o.addEventListener("click", () => {
+          ta.value = txt; legSujo = true; ok.textContent = "Opção " + (n + 1) + " escolhida. Salve para guardar."; cont.textContent = ta.value.length + "/2200";
+          ops.querySelectorAll(".opcao").forEach(z => z.setAttribute("aria-pressed", String(z === o)));
+        });
+        ops.appendChild(o);
+      });
+      c.appendChild(ops);
     }
     const g = h("div","campos");
     const w1 = h("div"); w1.appendChild(h("span","rot","Horário da postagem"));
     const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
+    const hs = h("div","arrobas-chips");
+    HORARIOS_PRONTOS.forEach(t => {
+      const b = h("button","arr",t); b.type = "button";
+      b.addEventListener("click", () => { hr.value = t; legSujo = true; ok.textContent = ""; });
+      hs.appendChild(b);
+    });
+    w1.appendChild(hs);
     const w2 = h("div"); w2.appendChild(h("span","rot","Colab (perfil que divide o post)"));
     const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
     const chips = h("div","arrobas-chips");
@@ -1021,15 +1057,9 @@ function renderLeg(){
     w2.appendChild(chips);
     g.appendChild(w1); g.appendChild(w2); c.appendChild(g);
     const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : "Salvar"); sv.type = "button";
-    const gr = h("button","btn","Gerar outra legenda"); gr.type = "button"; let vi = 0;
-    bt.appendChild(sv); if (!sem) bt.appendChild(gr); bt.appendChild(ok); c.appendChild(bt);
+    bt.appendChild(sv); bt.appendChild(ok); c.appendChild(bt);
     const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
     [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
-    gr.addEventListener("click", () => {
-      vi = (vi + 1) % 5;
-      ta.value = variarLegenda(sugerida, vi); sujo();
-      ok.textContent = vi ? "Variação " + (vi + 1) + " de 5" : "Legenda original";
-    });
     sv.addEventListener("click", async () => {
       if (!hr.value){ ok.textContent = "Preencha o horário."; hr.focus(); return; }
       sv.disabled = true; ok.textContent = "Salvando...";
