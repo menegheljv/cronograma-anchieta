@@ -15,7 +15,7 @@
   --bg:#ffffff; --surface:#ffffff; --surface-2:#f6f5f2; --border:#e3e0d8;
   --ink:#1a1814; --ink-soft:#5a5446;
   --joao:#0b7a3e; --renata:#7415d1; --isabela:#d6007a; --marcos:#1239b8;
-  --wandinho:#b0281a; --flavio:#0e7490; --mariana:#c24f00; --definir:#475569;
+  --wandinho:#d62828; --flavio:#0e7490; --mariana:#f2b705; --mariana-t:#7a5800; --mariana-on:#1a1814; --definir:#475569;
   --accent:#c23a6b; --gray:#737373; --past:#8a8a8a;
 }
 *{box-sizing:border-box}
@@ -28,9 +28,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 
 .filters{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
 .chip{--c:var(--ink);display:inline-flex;align-items:center;gap:9px;padding:8px 16px;border:1.5px solid var(--c);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
-.chip small{font-size:12px;font-weight:600;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);border-radius:999px;padding:1px 8px}
-.chip[aria-pressed="true"]{background:var(--c);color:#fff}
-.chip[aria-pressed="true"] small{background:rgba(255,255,255,.25);color:#fff}
+.chip small{font-size:12px;font-weight:600;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--ct,var(--c));border-radius:999px;padding:1px 8px}
+.chip[aria-pressed="true"]{background:var(--c);color:var(--on,#fff)}
+.chip[aria-pressed="true"] small{background:rgba(255,255,255,.3);color:var(--on,#fff)}
 
 .dow,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
 .dow{margin-bottom:8px}
@@ -44,7 +44,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 .today .num::after{content:" HOJE";font-size:11px;letter-spacing:.08em;color:var(--accent);vertical-align:middle}
 
 .item{font-size:13px;line-height:1.3;padding:6px 9px;border-radius:9px;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 9%,#fff);color:var(--ink);font-weight:500;text-wrap:pretty;overflow-wrap:anywhere}
-.item b{font-weight:700;color:var(--c)}
+.item b{font-weight:700;color:var(--ct,var(--c))}
 .item small{display:block;color:var(--ink-soft);font-size:12.5px;font-weight:500}
 .item.hide{display:none}
 
@@ -55,12 +55,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 .past .item b{color:var(--past)}
 .past.today .num::after{content:""}
 
-.own{background:var(--o);border-color:var(--o);color:#fff}
-.own .num,.own h2,.own h2 small{color:#fff}
-.own .item{background:rgba(255,255,255,.2);border-left-color:#fff;color:#fff}
+.own,.cell.own,.day.own{background:var(--o);border-color:var(--o);color:var(--on,#fff)}
+.own .num,.own h2,.own h2 small{color:var(--on,#fff)}
+.own .item{background:rgba(255,255,255,.25);border-left-color:var(--on,#fff);color:var(--on,#fff)}
 .own .item b{display:none}
-.own .item small{color:#fff}
-.own.today .num::after{color:#fff}
+.own .item small{color:var(--on,#fff)}
+.own.today .num::after{color:var(--on,#fff)}
 
 
 .list{display:none}
@@ -98,12 +98,12 @@ section[hidden]{display:none}
 .cell:not(.empty),.day{cursor:pointer}
 .cell:not(.empty):hover,.cell:not(.empty):focus-visible{border-color:var(--accent);outline:none}
 .sugbadge{align-self:flex-start;font-size:11.5px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,#fff);border-radius:999px;padding:2px 8px}
-.own .sugbadge{background:rgba(255,255,255,.25);color:#fff}
+.own .sugbadge{background:rgba(255,255,255,.3);color:var(--on,#fff)}
 .add{margin-top:auto;align-self:flex-start;font:inherit;font-size:12px;font-weight:700;color:var(--ink-soft);background:none;border:0;padding:0;opacity:0;cursor:pointer}
 .cell:hover .add,.cell:focus-visible .add{opacity:1}
-.own .add{color:#fff}
+.own .add{color:var(--on,#fff)}
 .day .add{opacity:1;margin:10px 0 0;display:block;font-size:14px;color:var(--accent)}
-.day.own .add{color:#fff}
+.day.own .add{color:var(--on,#fff)}
 dialog{border:0;border-radius:18px;padding:0;width:min(440px,calc(100% - 28px));box-shadow:0 20px 60px rgba(0,0,0,.25);color:var(--ink);font-family:inherit}
 dialog::backdrop{background:rgba(26,24,20,.5)}
 dialog form{padding:22px;display:flex;flex-direction:column;gap:14px}
@@ -132,7 +132,7 @@ dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var
 .tfilt{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
 .sugitem{display:grid;grid-template-columns:110px 110px 1fr;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;background:#fff}
 .sugitem .dt{font-weight:700}
-.tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);border:1.5px solid var(--c);justify-self:start}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--ct,var(--c));border:1.5px solid var(--c);justify-self:start}
 .sugtxt{min-width:0}
 .sugtxt strong{display:block;font-size:15px;overflow-wrap:anywhere}
 .sugitem a{color:var(--marcos);overflow-wrap:anywhere;font-size:14px}
@@ -386,10 +386,15 @@ function h(tag, cls, text){
   if (text != null) n.textContent = text;
   return n;
 }
+function corVars(el, v){
+  el.style.setProperty("--c", `var(${v})`);
+  el.style.setProperty("--ct", `var(${v}-t, var(${v}))`);
+  el.style.setProperty("--on", `var(${v}-on, #fff)`);
+}
 function itemEl(it, withNote){
   const [, title, owner, note] = it;
   const n = h("div", "item");
-  n.style.setProperty("--c", `var(${OWNERS[owner]})`);
+  corVars(n, OWNERS[owner]);
   n.dataset.owner = owner;
   n.appendChild(h("b", null, owner === "A definir" ? "" : owner + ": "));
   n.appendChild(document.createTextNode(title));
@@ -448,8 +453,8 @@ function applyFilter(){
     const has = !!active && (n.dataset.owners || "").split("|").includes(active);
     const past = n.classList.contains("past");
     n.classList.toggle("own", has && !past);
-    if (has && !past) n.style.setProperty("--o", `var(${OWNERS[active]})`);
-    else n.style.removeProperty("--o");
+    if (has && !past){ n.style.setProperty("--o", `var(${OWNERS[active]})`); n.style.setProperty("--on", `var(${OWNERS[active]}-on, #fff)`); }
+    else { n.style.removeProperty("--o"); n.style.removeProperty("--on"); }
   });
   document.querySelectorAll("#filters .chip").forEach(c => {
     c.setAttribute("aria-pressed", String((c.dataset.owner||null) === active));
@@ -467,7 +472,7 @@ function buildFilters(){
     const c = h("button","chip");
     c.type = "button";
     c.dataset.owner = o;
-    c.style.setProperty("--c", `var(${OWNERS[o]})`);
+    corVars(c, OWNERS[o]);
     c.appendChild(document.createTextNode(o));
     c.appendChild(h("small", null, String(VIVOS.filter(i => i[2]===o).length)));
     c.addEventListener("click", () => { active = (active===o ? null : o); applyFilter(); });
@@ -555,7 +560,7 @@ function renderSug(){
   tf.appendChild(todos);
   Object.keys(TIPOS).forEach(t => {
     const c = h("button","chip",t); c.type = "button";
-    c.style.setProperty("--c", `var(${TIPOS[t]})`);
+    corVars(c, TIPOS[t]);
     c.setAttribute("aria-pressed", String(sugTipo===t));
     c.addEventListener("click", () => { sugTipo = (sugTipo===t ? null : t); renderSug(); });
     tf.appendChild(c);
@@ -566,7 +571,7 @@ function renderSug(){
   lista.forEach(x => {
     const row = h("div","sugitem");
     row.appendChild(h("span","dt",fmtDia(x.data)));
-    const tg = h("span","tag",x.tipo); tg.style.setProperty("--c", `var(${TIPOS[x.tipo]})`);
+    const tg = h("span","tag",x.tipo); corVars(tg, TIPOS[x.tipo]);
     row.appendChild(tg);
     const tx = h("div","sugtxt");
     tx.appendChild(h("strong",null,x.titulo || "(sem título)"));
