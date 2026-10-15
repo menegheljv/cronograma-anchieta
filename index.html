@@ -259,14 +259,14 @@ const OUT_2026 = [
 [21,"Dia Nacional da Alimentação na Escola","João","Produzir card feed"],
 [22,"Aulas de música nas escolas de Anchieta","João","Produzir vídeo"],
 [23,"A Semana em 1 min","João","Produzir vídeo"],
-[24,"Foto/Vídeo Turismo","João",""],
+[24,"Foto/Vídeo Turismo","Marcos",""],
 [25,"Dia do Dentista","Renata","Card stories"],
 [26,"Dia do Trabalhador da Construção Civil","A definir","Produzir vídeo"],
 [27,"Você conhece um local que precisa de um PEV?","Isabela","Produzir card feed"],
 [28,"Dia do Servidor Público","Isabela","Produzir card feed"],
 [29,"TBT do mês de outubro","Isabela","Produzir"],
 [30,"A Semana em 1 min","João","Produzir vídeo"],
-[31,"Foto/Vídeo Turismo","João",""]
+[31,"Foto/Vídeo Turismo","Marcos",""]
 ];
 // Pautas por mês, chave "AAAA-MM". Meses sem chave aparecem vazios.
 const DATA = {
@@ -397,7 +397,8 @@ function render(){
   for (let i=0;i<FIRST_DOW;i++) grid.appendChild(h("div","cell empty"));
   for (let d=1; d<=DAYS; d++){
     const dow = (d-1+FIRST_DOW)%7;
-    const day = ITEMS.filter(it => it[0]===d);
+    const passou = isPast(d);
+    const day = passou ? [] : ITEMS.filter(it => it[0]===d);
     const flags = ((dow===0||dow===6)?" weekend":"")+(d===TODAY?" today":"")+(isPast(d)?" past":"");
     const owners = day.map(it => it[2]).join("|");
 
@@ -405,13 +406,15 @@ function render(){
     cell.dataset.owners = owners;
     cell.appendChild(h("span","num",String(d)));
     day.forEach(it => cell.appendChild(itemEl(it,false)));
-    const nSug = sugCount(d);
-    if (nSug) cell.appendChild(h("span","sugbadge", nSug + (nSug>1 ? " sugestões" : " sugestão")));
-    cell.appendChild(h("button","add","+ sugerir")).type = "button";
-    cell.tabIndex = 0; cell.setAttribute("role","button");
-    cell.setAttribute("aria-label","Sugerir pauta para o dia " + d);
-    cell.addEventListener("click", () => openDlg(d));
-    cell.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); openDlg(d); } });
+    if (!passou){
+      const nSug = sugCount(d);
+      if (nSug) cell.appendChild(h("span","sugbadge", nSug + (nSug>1 ? " sugestões" : " sugestão")));
+      cell.appendChild(h("button","add","+ sugerir")).type = "button";
+      cell.tabIndex = 0; cell.setAttribute("role","button");
+      cell.setAttribute("aria-label","Sugerir pauta para o dia " + d);
+      cell.addEventListener("click", () => openDlg(d));
+      cell.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); openDlg(d); } });
+    } else cell.style.cursor = "default";
     grid.appendChild(cell);
 
     const card = h("div","day"+flags);
@@ -420,11 +423,13 @@ function render(){
     hd.appendChild(h("small",null,DOW[dow]));
     card.appendChild(hd);
     day.forEach(it => card.appendChild(itemEl(it,true)));
-    const nS = sugCount(d);
-    if (nS) card.appendChild(h("span","sugbadge", nS + (nS>1 ? " sugestões" : " sugestão")));
-    const ad = h("button","add","+ Sugerir pauta para este dia"); ad.type = "button";
-    card.appendChild(ad);
-    card.addEventListener("click", () => openDlg(d));
+    if (!passou){
+      const nS = sugCount(d);
+      if (nS) card.appendChild(h("span","sugbadge", nS + (nS>1 ? " sugestões" : " sugestão")));
+      const ad = h("button","add","+ Sugerir pauta para este dia"); ad.type = "button";
+      card.appendChild(ad);
+      card.addEventListener("click", () => openDlg(d));
+    } else card.style.cursor = "default";
     list.appendChild(card);
   }
   applyFilter();
@@ -451,13 +456,14 @@ function buildFilters(){
   all.type = "button";
   all.addEventListener("click", () => { active = null; applyFilter(); });
   box.appendChild(all);
-  Object.keys(OWNERS).filter(o => ITEMS.some(i => i[2]===o)).forEach(o => {
+  const VIVOS = ITEMS.filter(i => !isPast(i[0]));
+  Object.keys(OWNERS).filter(o => VIVOS.some(i => i[2]===o)).forEach(o => {
     const c = h("button","chip");
     c.type = "button";
     c.dataset.owner = o;
     c.style.setProperty("--c", `var(${OWNERS[o]})`);
     c.appendChild(document.createTextNode(o));
-    c.appendChild(h("small", null, String(ITEMS.filter(i => i[2]===o).length)));
+    c.appendChild(h("small", null, String(VIVOS.filter(i => i[2]===o).length)));
     c.addEventListener("click", () => { active = (active===o ? null : o); applyFilter(); });
     box.appendChild(c);
   });
