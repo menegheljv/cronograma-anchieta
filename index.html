@@ -1094,6 +1094,14 @@ function renderLeg(){
     const dir = h("div","acoesp");
     if (dadosPreenchidos(x)) dir.appendChild(h("span","progtag","✓ Dados salvos"));
     if (x.formato){ const t = h("span","tag",x.formato); corVars(t, corFormato(x.formato)); dir.appendChild(t); }
+    if (pode){
+      const un = h("button","btn","Desmarcar ✓"); un.type = "button";
+      un.addEventListener("click", async () => {
+        if (!confirm("Desmarcar o check desta pauta? Ela sai desta aba e volta a ficar sem check.")) return;
+        try { await post({acao:"marcar", chave:x.id, feito:false, responsavel:x.owner}); editandoLeg.delete(x.id); legSujo = false; await carregarEstado(); } catch(err){ alert(msgErro(err)); }
+      });
+      dir.appendChild(un);
+    }
     top.appendChild(dir);
     c.appendChild(top);
     c.appendChild(h("strong",null,x.titulo));
