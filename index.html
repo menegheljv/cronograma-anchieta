@@ -1018,7 +1018,8 @@ function startApp(){
   bar.hidden = !(ADMIN || USER);
   document.getElementById("admTxt").innerHTML = ADMIN
     ? "<b>Olá, abacaxi. Modo administrador.</b> Clique em uma pauta para editar, arraste para outro dia ou clique em um dia vazio para criar. Marque ✓ em qualquer pauta."
-    : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar.";
+    : "<b>Olá, " + (USER || "") + ".</b> Marque ✓ nas suas pautas quando terminar. Todos veem o que está feito.";
+  if (!SUGGEST_URL) document.getElementById("admTxt").innerHTML += " <b>⚠ Planilha ainda não conectada:</b> o que for marcado ou alterado aparece só neste navegador.";
   document.getElementById("admSair").addEventListener("click", () => {
     try { sessionStorage.removeItem("cronoEntrada"); } catch(e){}
     location.reload();
@@ -1026,6 +1027,11 @@ function startApp(){
   let i = MONTHS.findIndex(({y,m}) => y===now.getFullYear() && m===now.getMonth());
   setMonth(i < 0 ? 0 : i);
   carregarEstado();
+  // com a planilha conectada, os ✓ e as alterações dos outros chegam sozinhos
+  if (SUGGEST_URL) setInterval(() => {
+    const aberto = ["dlg","dlgEd"].some(id => document.getElementById(id).open);
+    if (!document.hidden && !aberto) carregarEstado();
+  }, 30000);
 }
 
 // Entrada: a pessoa digita só o nome (sem senha). O administrador digita a senha dele no mesmo campo.
