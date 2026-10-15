@@ -15,7 +15,7 @@
   --bg:#ffffff; --surface:#ffffff; --surface-2:#f6f5f2; --border:#e3e0d8;
   --ink:#1a1814; --ink-soft:#5a5446;
   --joao:#0b7a3e; --renata:#7415d1; --isabela:#d6007a; --marcos:#1239b8;
-  --wandinho:#b0281a; --mariana:#c24f00; --definir:#475569;
+  --wandinho:#b0281a; --flavio:#0e7490; --mariana:#c24f00; --definir:#475569;
   --accent:#c23a6b; --gray:#737373; --past:#8a8a8a;
 }
 *{box-sizing:border-box}
@@ -215,7 +215,7 @@ dialog input[type=text]:focus,dialog input[type=url]:focus{outline:2px solid var
 const SUGGEST_URL = "";
 const OWNERS = {
   "João":"--joao","Renata":"--renata","Isabela":"--isabela","Marcos":"--marcos",
-  "Wandinho":"--wandinho","Mariana":"--mariana","A definir":"--definir"
+  "Wandinho":"--wandinho","Mariana":"--mariana","Flávio":"--flavio","A definir":"--definir"
 };
 // [dia, pauta, responsável, observação]
 const OUT_2026 = [
@@ -463,7 +463,7 @@ function buildFilters(){
   all.addEventListener("click", () => { active = null; applyFilter(); });
   box.appendChild(all);
   const VIVOS = ITEMS.filter(i => !isPast(i[0]));
-  Object.keys(OWNERS).filter(o => VIVOS.some(i => i[2]===o)).forEach(o => {
+  Object.keys(OWNERS).filter(o => o !== "A definir" || VIVOS.some(i => i[2]===o)).forEach(o => {
     const c = h("button","chip");
     c.type = "button";
     c.dataset.owner = o;
