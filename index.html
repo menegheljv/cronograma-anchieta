@@ -248,7 +248,7 @@ const OUT_2026 = [
 [13,"Dia Nacional do Fisioterapeuta e do Terapeuta Ocupacional","Renata","Card stories"],
 [13,"28º Festival Capixaba de Frutos do Mar","A definir",""],
 [14,"Gabinete em Ação em Simpatia","A definir","Pauta a confirmar"],
-[15,"Dia do Professor","A definir","Gravar vídeo"],
+[15,"Dia do Professor","Mariana","Gravar vídeo"],
 [15,"Dia Internacional da Mulher Rural","Renata","Card stories"],
 [15,"28º Festival Capixaba de Frutos do Mar","A definir",""],
 [16,"A Semana em 1 min","João","Produzir vídeo"],
@@ -477,15 +477,20 @@ function buildFilters(){
 function setMonth(i){
   const {y,m} = MONTHS[i];
   CY = y; CM = m; active = null;
-  ITEMS = DATA[y + "-" + String(m+1).padStart(2,"0")] || [];
+  const REAIS = DATA[y + "-" + String(m+1).padStart(2,"0")] || [];
   FIRST_DOW = new Date(y, m, 1).getDay();
   DAYS = new Date(y, m+1, 0).getDate();
+  // regra: fim de semana sem pauta vira Vídeo Turismo (Wandinho)
+  ITEMS = REAIS.slice();
+  for (let d=1; d<=DAYS; d++){
+    const w = new Date(y, m, d).getDay();
+    if ((w===0 || w===6) && !REAIS.some(it => it[0]===d)) ITEMS.push([d, "Vídeo Turismo", "Wandinho", "Padrão de fim de semana sem pauta"]);
+  }
   TODAY = (now.getFullYear()===y && now.getMonth()===m) ? now.getDate() : 0;
   const nome = MESES[m] + " " + y;
   document.getElementById("titulo").textContent = "Cronograma de " + nome;
   document.title = "Cronograma de " + nome;
-  document.getElementById("vazio").hidden = ITEMS.length > 0;
-  document.getElementById("filters").hidden = ITEMS.length === 0;
+  document.getElementById("vazio").hidden = REAIS.length > 0;
   document.querySelectorAll("#months .mchip").forEach((c,k) => {
     if (k === i) c.setAttribute("aria-current","true"); else c.removeAttribute("aria-current");
   });
