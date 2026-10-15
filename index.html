@@ -616,7 +616,7 @@ async function carregarEstado(){
   if (SUGGEST_URL){
     try { const r = await fetch(SUGGEST_URL + "?acao=estado"); e = await r.json(); } catch(x){ e = {}; }
   } else e = lerEstadoLocal();
-  SUGS = (e.sugestoes || []).filter(x => x && TIPOS[x.tipo] && linkOk(x.link) && dataOk(x.data)).map(x => Object.assign({}, x, {status: x.status || "pendente"}));
+  SUGS = (e.sugestoes || []).filter(x => x && TIPOS[x.tipo] && linkOk(x.link) && dataOk(x.data)).map(x => Object.assign({}, x, {status: x.status || "pendente"})).filter(x => x.status !== "rejeitada");
   EXTRAS = (e.extras || []).filter(x => x && x.id && dataOk(x.data) && x.titulo && OWNERS[x.responsavel || "A definir"]);
   ALT = {};
   (Array.isArray(e.alteracoes) ? e.alteracoes : []).forEach(a => { if (a && a.chave) ALT[a.chave] = a; });
@@ -1118,7 +1118,7 @@ function renderSug(){
       ap.addEventListener("click", () => abrirEd("aprovar", {sug:x, titulo:x.titulo, owner:"A definir", data:x.data, obs:x.info || "", formato:x.tipo, link:x.link}));
       const rj = h("button","btn","Rejeitar"); rj.type = "button";
       rj.addEventListener("click", async () => {
-        if (!confirm("Rejeitar esta sugestão?")) return;
+        if (!confirm("Rejeitar esta sugestão? Ela some da lista.")) return;
         try { await post({acao:"rejeitar", id:x.id}); await carregarEstado(); } catch(err){ alert(msgErro(err)); }
       });
       ac.appendChild(ap); ac.appendChild(rj);
