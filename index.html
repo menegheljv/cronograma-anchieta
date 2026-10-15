@@ -304,7 +304,7 @@ html,body{overflow-x:hidden}
     <div class="sughead"><h2>Dados de postagem</h2></div>
     <p class="aviso-leve">Depois de marcar ✓ na pauta, preencha a <b>legenda</b>, o <b>horário</b> e o <b>colab</b>. A legenda já vem sugerida: é só revisar e salvar.</p>
     <div class="tfilt" id="legFiltro"></div>
-    <p class="vazio" id="legVazio" hidden>Nada por aqui ainda. Quando uma pauta receber ✓, ela aparece nesta aba.</p>
+    <p class="vazio" id="legVazio" hidden>Nada por aqui. Quando uma pauta receber ✓, ela aparece nesta aba até ser programada ou postada.</p>
     <div id="legLista"></div>
   </section>
   <section id="vProg" hidden>
@@ -869,11 +869,14 @@ function gerarLegenda(titulo, formato, info){
 }
 const semLegenda = f => f === "Stories";
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario);
-const pendentesDados = () => listaProgramar().filter(x => !dadosPreenchidos(x));
+// só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
+const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
+const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso());
+const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
 function renderLeg(){
   const lista = document.getElementById("legLista"), vazio = document.getElementById("legVazio");
   const fl = document.getElementById("legFiltro"); fl.textContent = "";
-  const todos = listaProgramar();
+  const todos = listaDados();
   [["todas","Todas", todos.length],["pend","A preencher", todos.filter(x => !dadosPreenchidos(x)).length],["ok","Preenchidas", todos.filter(dadosPreenchidos).length]].forEach(([k,t,n]) => {
     const c = h("button","chip",t); c.type = "button"; c.setAttribute("aria-pressed", String(legFiltro === k));
     c.appendChild(h("small",null,String(n)));
