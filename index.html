@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="robots" content="noindex,nofollow">
-<title>Cronograma de Outubro 2026</title>
+<title>Cronograma de Conteúdo 2026–2027</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&display=swap">
@@ -74,6 +74,68 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 .day.own.today h2::after{color:#fff}
 .day.past.today h2::after{content:""}
 
+.months{display:flex;gap:8px;overflow-x:auto;margin:18px 0 0;padding-bottom:4px;scrollbar-width:thin}
+.mchip{flex:none;padding:7px 14px;border:1.5px solid var(--border);border-radius:999px;background:#fff;color:var(--ink);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.mchip[aria-current="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.mchip.sep{margin-left:10px}
+.vazio{margin:18px 0 0;padding:14px 16px;border:1.5px dashed var(--border);border-radius:14px;color:var(--ink-soft);font-size:14px}
+.vazio[hidden],.filters[hidden]{display:none}
+.wrap[hidden]{display:none}
+#gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);z-index:50}
+#gate[hidden]{display:none}
+#gate form{width:min(360px,100%);display:flex;flex-direction:column;gap:12px;text-align:center}
+#gate h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em}
+#gate p{margin:0;color:var(--ink-soft);font-size:14px}
+#gate input{font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;text-align:center}
+#gate input:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+#gate button{font:inherit;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:var(--ink);color:#fff;cursor:pointer}
+#gate .erro{color:var(--wandinho);font-size:13.5px;min-height:18px}
+.tabs{display:flex;gap:8px;margin:18px 0 0;border-bottom:1.5px solid var(--border)}
+.tab{font:inherit;font-size:15px;font-weight:700;padding:10px 16px;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;background:none;color:var(--ink-soft);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab small{font-size:12px;font-weight:700;background:var(--surface-2);border-radius:999px;padding:1px 8px;margin-left:6px}
+section[hidden]{display:none}
+.cell:not(.empty),.day{cursor:pointer}
+.cell:not(.empty):hover,.cell:not(.empty):focus-visible{border-color:var(--accent);outline:none}
+.sugbadge{align-self:flex-start;font-size:11.5px;font-weight:700;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,#fff);border-radius:999px;padding:2px 8px}
+.own .sugbadge{background:rgba(255,255,255,.25);color:#fff}
+.add{margin-top:auto;align-self:flex-start;font:inherit;font-size:12px;font-weight:700;color:var(--ink-soft);background:none;border:0;padding:0;opacity:0;cursor:pointer}
+.cell:hover .add,.cell:focus-visible .add{opacity:1}
+.own .add{color:#fff}
+.day .add{opacity:1;margin:10px 0 0;display:block;font-size:14px;color:var(--accent)}
+.day.own .add{color:#fff}
+dialog{border:0;border-radius:18px;padding:0;width:min(440px,calc(100% - 28px));box-shadow:0 20px 60px rgba(0,0,0,.25);color:var(--ink);font-family:inherit}
+dialog::backdrop{background:rgba(26,24,20,.5)}
+dialog form{padding:22px;display:flex;flex-direction:column;gap:14px}
+dialog h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+dialog p{margin:0;color:var(--ink-soft);font-size:14px}
+fieldset{border:0;padding:0;margin:0}
+legend,.lbl{font-size:13px;font-weight:700;margin-bottom:8px;padding:0}
+.tipos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tipos label{position:relative}
+.tipos input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.tipos span{display:block;text-align:center;padding:11px 8px;border:1.5px solid var(--border);border-radius:12px;font-weight:600;font-size:14.5px}
+.tipos input:checked+span{background:var(--ink);border-color:var(--ink);color:#fff}
+.tipos input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+dialog input[type=url]{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px}
+dialog input[type=url]:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+.acoes{display:flex;gap:10px;justify-content:flex-end}
+.btn{font:inherit;font-size:15px;font-weight:700;padding:11px 18px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--ink);color:#fff}
+.btn:disabled{opacity:.5;cursor:wait}
+.msg{min-height:18px;font-size:13.5px;color:var(--wandinho)}
+.msg.ok{color:var(--joao)}
+.aviso{margin:16px 0 0;padding:12px 14px;border-radius:12px;background:#fff7e6;border:1.5px solid #f0d9a8;color:#6b4e00;font-size:13.5px}
+.aviso[hidden]{display:none}
+.sughead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0 12px}
+.sughead h2{margin:0;font-size:20px}
+.tfilt{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.sugitem{display:grid;grid-template-columns:110px 110px 1fr;gap:12px;align-items:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:10px;background:#fff}
+.sugitem .dt{font-weight:700}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);border:1.5px solid var(--c);justify-self:start}
+.sugitem a{color:var(--marcos);overflow-wrap:anywhere;font-size:14px}
+.sugitem small{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}
+@media (max-width:860px){.sugitem{grid-template-columns:1fr auto;}.sugitem a{grid-column:1/-1}}
 .foot{margin-top:28px;color:var(--ink-soft);font-size:13px}
 
 @media (max-width:860px){
@@ -88,24 +150,71 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="gate">
+  <form id="gateForm" autocomplete="off">
+    <h1>Cronograma de Conteúdo</h1>
+    <p>Prefeitura de Anchieta · acesso restrito</p>
+    <input id="gateInput" type="password" placeholder="Senha" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Senha" autofocus>
+    <button type="submit">Entrar</button>
+    <div class="erro" id="gateErro" role="alert"></div>
+  </form>
+</div>
+<div class="wrap" id="app" hidden>
   <header class="hero">
-    <h1>Cronograma de Outubro 2026</h1>
+    <h1 id="titulo">Cronograma de Outubro 2026</h1>
     <p>Prefeitura de Anchieta · pautas de conteúdo das redes sociais</p>
   </header>
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
+    <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount">0</small></button>
+  </div>
+  <section id="vCal">
+  <nav class="months" id="months" aria-label="Escolher o mês"></nav>
   <div class="filters" id="filters" role="group" aria-label="Filtrar por responsável"></div>
+  <p class="vazio" id="vazio" hidden>Nenhuma pauta cadastrada para este mês ainda.</p>
   <div class="dow"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
   <div class="grid" id="grid"></div>
   <div class="list" id="list"></div>
-  <p class="foot">Página somente leitura. Alterações são feitas pela coordenação.</p>
+  <p class="foot">Clique em um dia para sugerir uma pauta. O cronograma em si só é alterado pela coordenação.</p>
+  </section>
+  <section id="vSug" hidden>
+    <p class="aviso" id="avisoLocal" hidden>Modo de teste: as sugestões ficam salvas só neste navegador. Para juntar as de todos em um só lugar, falta conectar a planilha (veja apps-script.gs).</p>
+    <div class="sughead"><h2>Todas as sugestões</h2><button class="btn" id="sugRefresh" type="button">Atualizar</button></div>
+    <div class="tfilt" id="tfilt"></div>
+    <div id="sugList"></div>
+    <p class="vazio" id="sugVazio" hidden>Nenhuma sugestão por aqui ainda. Clique em um dia no cronograma para enviar a primeira.</p>
+  </section>
 </div>
+<dialog id="dlg">
+  <form id="sugForm" method="dialog">
+    <div><h2 id="dlgTitulo">Sugerir pauta</h2><p>Escolha o formato e cole um link de referência.</p></div>
+    <fieldset>
+      <legend>Formato</legend>
+      <div class="tipos">
+        <label><input type="radio" name="tipo" value="Vídeo" required><span>Vídeo</span></label>
+        <label><input type="radio" name="tipo" value="Carrossel"><span>Carrossel</span></label>
+        <label><input type="radio" name="tipo" value="Card"><span>Card</span></label>
+        <label><input type="radio" name="tipo" value="Stories"><span>Stories</span></label>
+      </div>
+    </fieldset>
+    <div><label class="lbl" for="sugLink">Link de referência</label>
+      <input id="sugLink" type="url" inputmode="url" placeholder="https://..." required autocomplete="off" autocapitalize="off"></div>
+    <div class="msg" id="sugMsg" role="status"></div>
+    <div class="acoes">
+      <button class="btn" type="button" id="sugCancel">Cancelar</button>
+      <button class="btn pri" type="submit" id="sugSend">Enviar sugestão</button>
+    </div>
+  </form>
+</dialog>
 <script>
+// Endereço do Apps Script (veja apps-script.gs). Vazio = modo de teste, salva só neste navegador.
+const SUGGEST_URL = "";
 const OWNERS = {
   "João":"--joao","Renata":"--renata","Isabela":"--isabela","Marcos":"--marcos",
   "Wandinho":"--wandinho","Mariana":"--mariana","A definir":"--definir"
 };
 // [dia, pauta, responsável, observação]
-const ITEMS = [
+const OUT_2026 = [
 [1,"Início do Outubro Rosa e Novembro Azul: Câncer de Mama","A definir","Mudar a identidade visual das redes sociais"],
 [1,"TBT do mês de setembro","Isabela","Produzir"],
 [1,"Dia Internacional das Pessoas Idosas / Dia Nacional do Idoso","A definir","Post carrossel mostrando as atividades oferecidas aos idosos"],
@@ -159,14 +268,17 @@ const ITEMS = [
 [30,"A Semana em 1 min","João","Produzir vídeo"],
 [31,"Foto/Vídeo Turismo","João",""]
 ];
+// Pautas por mês, chave "AAAA-MM". Meses sem chave aparecem vazios.
+const DATA = {"2026-10": OUT_2026};
 
-const FIRST_DOW = 4; // 1/10/2026 é quinta-feira
-const DAYS = 31;
 const DOW = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+// de outubro/2026 a dezembro/2027
+const MONTHS = Array.from({length:15}, (_,i) => ({y:2026+Math.floor((9+i)/12), m:(9+i)%12}));
 const now = new Date();
-const TODAY = (now.getFullYear()===2026 && now.getMonth()===9) ? now.getDate() : 0;
 const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-const isPast = d => new Date(2026, 9, d) < startOfToday;
+let ITEMS = [], FIRST_DOW = 0, DAYS = 30, TODAY = 0, CY = 2026, CM = 9;
+const isPast = d => new Date(CY, CM, d) < startOfToday;
 let active = null;
 
 function h(tag, cls, text){
@@ -200,6 +312,13 @@ function render(){
     cell.dataset.owners = owners;
     cell.appendChild(h("span","num",String(d)));
     day.forEach(it => cell.appendChild(itemEl(it,false)));
+    const nSug = sugCount(d);
+    if (nSug) cell.appendChild(h("span","sugbadge", nSug + (nSug>1 ? " sugestões" : " sugestão")));
+    cell.appendChild(h("button","add","+ sugerir")).type = "button";
+    cell.tabIndex = 0; cell.setAttribute("role","button");
+    cell.setAttribute("aria-label","Sugerir pauta para o dia " + d);
+    cell.addEventListener("click", () => openDlg(d));
+    cell.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); openDlg(d); } });
     grid.appendChild(cell);
 
     const card = h("div","day"+flags);
@@ -208,6 +327,11 @@ function render(){
     hd.appendChild(h("small",null,DOW[dow]));
     card.appendChild(hd);
     day.forEach(it => card.appendChild(itemEl(it,true)));
+    const nS = sugCount(d);
+    if (nS) card.appendChild(h("span","sugbadge", nS + (nS>1 ? " sugestões" : " sugestão")));
+    const ad = h("button","add","+ Sugerir pauta para este dia"); ad.type = "button";
+    card.appendChild(ad);
+    card.addEventListener("click", () => openDlg(d));
     list.appendChild(card);
   }
   applyFilter();
@@ -229,6 +353,7 @@ function applyFilter(){
 }
 function buildFilters(){
   const box = document.getElementById("filters");
+  box.textContent = "";
   const all = h("button","chip","Todos");
   all.type = "button";
   all.addEventListener("click", () => { active = null; applyFilter(); });
@@ -244,11 +369,177 @@ function buildFilters(){
     box.appendChild(c);
   });
 }
-buildFilters();
-render();
-if (TODAY && window.matchMedia("(max-width:860px)").matches){
-  const t = document.querySelector(".day.today");
-  if (t) t.scrollIntoView({block:"start"});
+function setMonth(i){
+  const {y,m} = MONTHS[i];
+  CY = y; CM = m; active = null;
+  ITEMS = DATA[y + "-" + String(m+1).padStart(2,"0")] || [];
+  FIRST_DOW = new Date(y, m, 1).getDay();
+  DAYS = new Date(y, m+1, 0).getDate();
+  TODAY = (now.getFullYear()===y && now.getMonth()===m) ? now.getDate() : 0;
+  const nome = MESES[m] + " " + y;
+  document.getElementById("titulo").textContent = "Cronograma de " + nome;
+  document.title = "Cronograma de " + nome;
+  document.getElementById("vazio").hidden = ITEMS.length > 0;
+  document.getElementById("filters").hidden = ITEMS.length === 0;
+  document.querySelectorAll("#months .mchip").forEach((c,k) => {
+    if (k === i) c.setAttribute("aria-current","true"); else c.removeAttribute("aria-current");
+  });
+  buildFilters();
+  render();
+  if (TODAY && window.matchMedia("(max-width:860px)").matches){
+    const t = document.querySelector(".day.today");
+    if (t) t.scrollIntoView({block:"start"});
+  }
+}
+function buildMonths(){
+  const box = document.getElementById("months");
+  MONTHS.forEach(({y,m},i) => {
+    const c = h("button","mchip" + (m===0 ? " sep" : ""), MESES[m].slice(0,3) + "/" + String(y).slice(2));
+    c.type = "button";
+    c.title = MESES[m] + " " + y;
+    c.addEventListener("click", () => setMonth(i));
+    box.appendChild(c);
+  });
+}
+// ---------- Sugestões ----------
+const TIPOS = {"Vídeo":"--joao","Carrossel":"--renata","Card":"--isabela","Stories":"--mariana"};
+let SUGS = [], sugTipo = null, sugDia = null;
+const pad2 = n => String(n).padStart(2,"0");
+const isoDia = d => CY + "-" + pad2(CM+1) + "-" + pad2(d);
+const sugCount = d => SUGS.filter(x => x.data === isoDia(d)).length;
+const linkOk = u => { try { const x = new URL(u); return x.protocol==="http:" || x.protocol==="https:"; } catch(e){ return false; } };
+function lerLocal(){ try { return JSON.parse(localStorage.getItem("cronoSug") || "[]"); } catch(e){ return []; } }
+async function carregarSug(){
+  if (SUGGEST_URL){
+    try {
+      const r = await fetch(SUGGEST_URL + "?acao=listar");
+      const j = await r.json();
+      SUGS = Array.isArray(j) ? j : [];
+    } catch(e){ SUGS = []; }
+  } else SUGS = lerLocal();
+  SUGS = SUGS.filter(x => x && TIPOS[x.tipo] && linkOk(x.link) && /^\d{4}-\d{2}-\d{2}$/.test(x.data));
+  document.getElementById("sugCount").textContent = SUGS.length;
+  document.getElementById("avisoLocal").hidden = !!SUGGEST_URL;
+  render(); renderSug();
+}
+async function enviarSug(item){
+  if (SUGGEST_URL){
+    const r = await fetch(SUGGEST_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(item)});
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.erro || "falha");
+  } else {
+    const l = lerLocal(); l.push(item);
+    localStorage.setItem("cronoSug", JSON.stringify(l));
+  }
+}
+function fmtDia(iso){
+  const [y,m,d] = iso.split("-").map(Number);
+  return pad2(d) + " " + MESES[m-1].slice(0,3) + " " + y;
+}
+function renderSug(){
+  const box = document.getElementById("sugList"); box.textContent = "";
+  const tf = document.getElementById("tfilt"); tf.textContent = "";
+  const todos = h("button","chip","Todos"); todos.type = "button";
+  todos.setAttribute("aria-pressed", String(!sugTipo));
+  todos.addEventListener("click", () => { sugTipo = null; renderSug(); });
+  tf.appendChild(todos);
+  Object.keys(TIPOS).forEach(t => {
+    const c = h("button","chip",t); c.type = "button";
+    c.style.setProperty("--c", `var(${TIPOS[t]})`);
+    c.setAttribute("aria-pressed", String(sugTipo===t));
+    c.addEventListener("click", () => { sugTipo = (sugTipo===t ? null : t); renderSug(); });
+    tf.appendChild(c);
+  });
+  const lista = SUGS.filter(x => !sugTipo || x.tipo===sugTipo)
+    .sort((a,b) => a.data.localeCompare(b.data) || String(a.criadoEm).localeCompare(String(b.criadoEm)));
+  document.getElementById("sugVazio").hidden = lista.length > 0;
+  lista.forEach(x => {
+    const row = h("div","sugitem");
+    row.appendChild(h("span","dt",fmtDia(x.data)));
+    const tg = h("span","tag",x.tipo); tg.style.setProperty("--c", `var(${TIPOS[x.tipo]})`);
+    row.appendChild(tg);
+    const a = h("a",null,x.link); a.href = x.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+    row.appendChild(a);
+    box.appendChild(row);
+  });
+}
+function openDlg(d){
+  sugDia = isoDia(d);
+  document.getElementById("dlgTitulo").textContent = "Sugerir pauta para " + fmtDia(sugDia);
+  document.getElementById("sugForm").reset();
+  const m = document.getElementById("sugMsg"); m.textContent = ""; m.className = "msg";
+  document.getElementById("sugSend").disabled = false;
+  const dlg = document.getElementById("dlg");
+  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open","");
+}
+function showTab(which){
+  const cal = which === "cal";
+  document.getElementById("vCal").hidden = !cal;
+  document.getElementById("vSug").hidden = cal;
+  document.getElementById("tabCal").setAttribute("aria-selected", String(cal));
+  document.getElementById("tabSug").setAttribute("aria-selected", String(!cal));
+  if (!cal) carregarSug();
+}
+function initSug(){
+  document.getElementById("tabCal").addEventListener("click", () => showTab("cal"));
+  document.getElementById("tabSug").addEventListener("click", () => showTab("sug"));
+  document.getElementById("sugRefresh").addEventListener("click", carregarSug);
+  document.getElementById("sugCancel").addEventListener("click", () => document.getElementById("dlg").close());
+  document.getElementById("sugForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const tipo = (document.querySelector('input[name="tipo"]:checked')||{}).value;
+    const link = document.getElementById("sugLink").value.trim();
+    const m = document.getElementById("sugMsg"), btn = document.getElementById("sugSend");
+    if (!tipo){ m.className = "msg"; m.textContent = "Escolha o formato."; return; }
+    if (!linkOk(link)){ m.className = "msg"; m.textContent = "Cole um link válido, começando com http:// ou https://"; return; }
+    btn.disabled = true; m.className = "msg"; m.textContent = "Enviando...";
+    try {
+      await enviarSug({id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), data:sugDia, tipo, link, criadoEm:new Date().toISOString()});
+      m.className = "msg ok"; m.textContent = "Sugestão enviada. Obrigado!";
+      await carregarSug();
+      setTimeout(() => document.getElementById("dlg").close(), 900);
+    } catch(err){
+      btn.disabled = false; m.textContent = "Não consegui enviar. Tente de novo em instantes.";
+    }
+  });
+}
+function startApp(){
+  initSug();
+  buildMonths();
+  let i = MONTHS.findIndex(({y,m}) => y===now.getFullYear() && m===now.getMonth());
+  setMonth(i < 0 ? 0 : i);
+  carregarSug();
+}
+
+// Senha de entrada. Atenção: é só uma barreira simples no navegador, não é segurança real.
+const PASS_HASH = 1612892469399563;
+function cyrb53(str){
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i=0, ch; i<str.length; i++){ ch = str.charCodeAt(i); h1 = Math.imul(h1^ch, 2654435761); h2 = Math.imul(h2^ch, 1597334677); }
+  h1 = Math.imul(h1^(h1>>>16), 2246822507) ^ Math.imul(h2^(h2>>>13), 3266489909);
+  h2 = Math.imul(h2^(h2>>>16), 2246822507) ^ Math.imul(h1^(h1>>>13), 3266489909);
+  return 4294967296 * (2097151 & h2) + (h1>>>0);
+}
+function unlock(){
+  document.getElementById("gate").hidden = true;
+  document.getElementById("app").hidden = false;
+  startApp();
+}
+let saved = null;
+try { saved = sessionStorage.getItem("cronoOk"); } catch(e){}
+if (saved === String(PASS_HASH)) unlock();
+else {
+  document.getElementById("gateForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = document.getElementById("gateInput").value.trim();
+    if (cyrb53(v) === PASS_HASH){
+      try { sessionStorage.setItem("cronoOk", String(PASS_HASH)); } catch(e){}
+      unlock();
+    } else {
+      document.getElementById("gateErro").textContent = "Senha incorreta.";
+      document.getElementById("gateInput").select();
+    }
+  });
 }
 </script>
 </body>
