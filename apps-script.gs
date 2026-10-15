@@ -140,7 +140,7 @@ function doPost(e) {
   }
 }
 
-// Só entrega campos seguros das demandas: e-mail, telefone e anexos NÃO saem da planilha.
+// Só entrega campos seguros das demandas: e-mail e telefone NÃO saem da planilha. Os arquivos anexados saem como links do Drive.
 function demandas_() {
   const sh = SpreadsheetApp.openById(DEMANDAS_PLANILHA).getSheetByName(DEMANDAS_ABA);
   if (!sh) return [];
@@ -159,6 +159,7 @@ function demandas_() {
     id: String(i + 2), ts: t(r, 'ts'), secretaria: t(r, 'secretaria'), solicitante: t(r, 'solicitante'),
     tipo: t(r, 'tipo'), objetivo: t(r, 'objetivo'), formato: t(r, 'formato'), prazo: t(r, 'prazo'),
     info: t(r, 'info'), urgente: t(r, 'urgente'), justif: t(r, 'justif'),
+    arquivos: (t(r, 'anexos').match(/https:\/\/(?:drive|docs)\.google\.com\/[^\s,]+/g) || []).slice(0, 10),
     anexos: t(r, 'anexos') ? t(r, 'anexos').split(',').length : 0
   }));
 }

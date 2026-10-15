@@ -1695,7 +1695,7 @@ function renderDem(){
     }
     topo.appendChild(ac); card.appendChild(topo);
     card.appendChild(h("div","quando","Recebida em " + (d.ts || "—") + (d.solicitante ? " · por " + d.solicitante : "")));
-    [["Objetivo", d.objetivo], ["Formato desejado", d.formato], ["Prazo desejado", d.prazo], ["Informações para produção", d.info], ["Justificativa da urgência", urg ? d.justif : ""], ["Anexos", d.anexos ? d.anexos + (d.anexos > 1 ? " arquivos enviados" : " arquivo enviado") + " (abrir na planilha)" : ""]].forEach(([k,v]) => {
+    [["Objetivo", d.objetivo], ["Formato desejado", d.formato], ["Prazo desejado", d.prazo], ["Informações para produção", d.info], ["Justificativa da urgência", urg ? d.justif : ""], ["Arquivos enviados", (d.arquivos && d.arquivos.length) ? d.arquivos.map((u,i) => "Arquivo " + (i+1) + ": " + u).join("\n") : (d.anexos ? d.anexos + (d.anexos > 1 ? " arquivos enviados" : " arquivo enviado") + " (abrir na planilha)" : "")]].forEach(([k,v]) => {
       if (!v || v === "." || v === "--" || v === "\\--") return;
       const l = h("div","linha"); l.appendChild(h("span","k",k));
       const vv = h("span","v"); comLinks(vv, v); l.appendChild(vv); card.appendChild(l);
