@@ -89,7 +89,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grote
 #gate input{font:inherit;font-size:17px;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;text-align:center}
 #gate input:focus{outline:2px solid var(--accent);border-color:var(--accent)}
 #gate button{font:inherit;font-size:16px;font-weight:700;padding:12px;border:0;border-radius:12px;background:var(--ink);color:#fff;cursor:pointer}
-#gate .linkbtn{font:inherit;font-size:13.5px;background:none;border:0;color:var(--ink-soft);text-decoration:underline;cursor:pointer;padding:2px}
 #gate .erro{color:var(--wandinho);font-size:13.5px;min-height:18px}
 .tabs{display:flex;gap:8px;margin:18px 0 0;border-bottom:1.5px solid var(--border)}
 .tab{font:inherit;font-size:15px;font-weight:700;padding:10px 16px;border:0;border-bottom:3px solid transparent;margin-bottom:-1.5px;background:none;color:var(--ink-soft);cursor:pointer}
@@ -175,7 +174,6 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
     <p id="gateSub">Prefeitura de Anchieta · digite seu nome para entrar</p>
     <input id="gateInput" type="text" placeholder="Seu nome" autocapitalize="words" autocorrect="off" spellcheck="false" aria-label="Seu nome" autofocus>
     <button type="submit">Entrar</button>
-    <button type="button" id="gateAdm" class="linkbtn">Sou administrador</button>
     <div class="erro" id="gateErro" role="alert"></div>
   </form>
 </div>
@@ -881,7 +879,7 @@ function startApp(){
   carregarEstado();
 }
 
-// Entrada: a pessoa digita só o nome (sem senha). O administrador usa a senha dele.
+// Entrada: a pessoa digita só o nome (sem senha). O administrador digita a senha dele no mesmo campo.
 // Quando há SUGGEST_URL, o servidor (Apps Script) confere a senha do administrador a cada gravação.
 const ADMIN_HASH = 7936277791153394;
 const semAcento = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -910,23 +908,13 @@ const idSalva = salva ? identificar(salva) : null;
 if (idSalva) entrar(idSalva, salva);
 else {
   const campo = document.getElementById("gateInput");
-  document.getElementById("gateAdm").addEventListener("click", () => {
-    const adm = campo.type === "text";
-    campo.type = adm ? "password" : "text";
-    campo.placeholder = adm ? "Senha do administrador" : "Seu nome";
-    campo.setAttribute("aria-label", campo.placeholder);
-    document.getElementById("gateAdm").textContent = adm ? "Voltar: entrar com meu nome" : "Sou administrador";
-    document.getElementById("gateSub").textContent = adm ? "Prefeitura de Anchieta · acesso do administrador" : "Prefeitura de Anchieta · digite seu nome para entrar";
-    document.getElementById("gateErro").textContent = ""; campo.value = ""; campo.focus();
-  });
   document.getElementById("gateForm").addEventListener("submit", e => {
     e.preventDefault();
     const v = campo.value.trim();
     const id = identificar(v);
-    const doAdm = campo.type === "password";
-    if (id && id.admin === doAdm) entrar(id, v);
+    if (id) entrar(id, v);
     else {
-      document.getElementById("gateErro").textContent = doAdm ? "Senha incorreta." : "Não encontrei esse nome. Use o nome que aparece no cronograma.";
+      document.getElementById("gateErro").textContent = "Não encontrei esse nome. Use o nome que aparece no cronograma.";
       campo.select();
     }
   });
