@@ -158,6 +158,16 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 .stt{font-size:12.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft)}
 .stt.aprovada{background:#e3f4e8;color:var(--joao)}
 .sugitem.rejeitada{opacity:.55}
+a.btn{text-decoration:none;display:inline-block}
+a.btn[hidden]{display:none}
+.dem{padding:14px 16px;border:1.5px solid var(--border);border-radius:14px;margin-bottom:12px;background:#fff;display:grid;gap:6px}
+.dem h3{margin:0;font-size:16.5px;font-weight:700;overflow-wrap:anywhere}
+.dem .quando{font-size:12.5px;color:var(--ink-soft)}
+.dem .linha{display:grid;grid-template-columns:170px 1fr;gap:8px;font-size:14.5px}
+.dem .k{font-weight:700;color:var(--ink-soft);font-size:13px}
+.dem .v{overflow-wrap:anywhere;white-space:pre-wrap}
+.dem .v a{color:var(--marcos)}
+@media (max-width:860px){.dem .linha{grid-template-columns:1fr;gap:2px}}
 .msg{min-height:18px;font-size:13.5px;color:var(--wandinho)}
 .msg.ok{color:var(--joao)}
 .aviso{margin:16px 0 0;padding:12px 14px;border-radius:12px;background:#fff7e6;border:1.5px solid #f0d9a8;color:#6b4e00;font-size:13.5px}
@@ -208,6 +218,7 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
   <div class="tabs" role="tablist">
     <button class="tab" id="tabCal" role="tab" aria-selected="true" type="button">Cronograma</button>
     <button class="tab" id="tabSug" role="tab" aria-selected="false" type="button">Sugestões<small id="sugCount">0</small></button>
+    <button class="tab" id="tabDem" role="tab" aria-selected="false" type="button">Demandas<small id="demCount">0</small></button>
   </div>
   <section id="vCal">
   <nav class="months" id="months" aria-label="Escolher o mês"></nav>
@@ -217,6 +228,13 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
   <div class="grid" id="grid"></div>
   <div class="list" id="list"></div>
   <p class="foot">Clique em um dia para sugerir uma pauta. O cronograma em si só é alterado pela coordenação.</p>
+  </section>
+  <section id="vDem" hidden>
+    <p class="aviso" id="avisoDem" hidden></p>
+    <div class="sughead"><h2>Demandas recebidas</h2>
+      <div class="sugacoes"><a class="btn pri" id="demNova" target="_blank" rel="noopener noreferrer" hidden>Enviar demanda</a><button class="btn" id="demRefresh" type="button">Atualizar</button></div></div>
+    <div id="demList"></div>
+    <p class="vazio" id="demVazio" hidden>Nenhuma demanda recebida ainda.</p>
   </section>
   <section id="vSug" hidden>
     <p class="aviso" id="avisoLocal" hidden>Modo de teste: as sugestões ficam salvas só neste navegador. Para juntar as de todos em um só lugar, falta conectar a planilha (veja apps-script.gs). As alterações do administrador também ficam só aqui.</p>
@@ -288,6 +306,10 @@ dialog input[type=text]:focus,dialog input[type=url]:focus,dialog input[type=dat
 <script>
 // Endereço do Apps Script (veja apps-script.gs). Vazio = modo de teste, salva só neste navegador.
 const SUGGEST_URL = "";
+// Aba Demandas: respostas do Google Forms. DEMANDAS_CSV = link "Publicar na Web" (CSV) da planilha de respostas;
+// DEMANDAS_FORM = link público do formulário (botão "Enviar demanda"). Vazio = ainda não conectado.
+const DEMANDAS_CSV = "";
+const DEMANDAS_FORM = "";
 const OWNERS = {
   "João":"--joao","Renata":"--renata","Isabela":"--isabela","Marcos":"--marcos",
   "Wandinho":"--wandinho","Mariana":"--mariana","Flávio":"--flavio","A definir":"--definir"
@@ -963,12 +985,74 @@ function openDlg(d){
   if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open","");
 }
 function showTab(which){
-  const cal = which === "cal";
-  document.getElementById("vCal").hidden = !cal;
-  document.getElementById("vSug").hidden = cal;
-  document.getElementById("tabCal").setAttribute("aria-selected", String(cal));
-  document.getElementById("tabSug").setAttribute("aria-selected", String(!cal));
-  if (!cal) carregarEstado();
+  const abas = {cal:["vCal","tabCal"], sug:["vSug","tabSug"], dem:["vDem","tabDem"]};
+  Object.keys(abas).forEach(k => {
+    document.getElementById(abas[k][0]).hidden = k !== which;
+    document.getElementById(abas[k][1]).setAttribute("aria-selected", String(k === which));
+  });
+  if (which === "sug") carregarEstado();
+  if (which === "dem") carregarDemandas();
+}
+// ---------- Demandas (respostas do Google Forms) ----------
+function lerCSV(t){
+  const linhas = []; let l = [], c = "", asp = false;
+  for (let i=0; i<t.length; i++){
+    const ch = t[i];
+    if (asp){
+      if (ch === '"'){ if (t[i+1] === '"'){ c += '"'; i++; } else asp = false; }
+      else c += ch;
+    } else if (ch === '"') asp = true;
+    else if (ch === ","){ l.push(c); c = ""; }
+    else if (ch === "\n" || ch === "\r"){
+      if (ch === "\r" && t[i+1] === "\n") i++;
+      l.push(c); c = ""; if (l.some(x => x !== "")) linhas.push(l); l = [];
+    } else c += ch;
+  }
+  l.push(c); if (l.some(x => x !== "")) linhas.push(l);
+  return linhas;
+}
+function comLinks(el, txt){
+  txt.split(/(https?:\/\/[^\s]+)/g).forEach(parte => {
+    if (/^https?:\/\//.test(parte) && linkOk(parte)){
+      const a = h("a",null,parte); a.href = parte; a.target = "_blank"; a.rel = "noopener noreferrer"; el.appendChild(a);
+    } else if (parte) el.appendChild(document.createTextNode(parte));
+  });
+}
+async function carregarDemandas(){
+  const aviso = document.getElementById("avisoDem"), lista = document.getElementById("demList"), vazio = document.getElementById("demVazio");
+  const nova = document.getElementById("demNova");
+  if (DEMANDAS_FORM && linkOk(DEMANDAS_FORM)){ nova.href = DEMANDAS_FORM; nova.hidden = false; }
+  lista.textContent = ""; vazio.hidden = true; aviso.hidden = true;
+  if (!DEMANDAS_CSV){
+    aviso.hidden = false;
+    aviso.textContent = "As demandas ainda não estão conectadas ao formulário. Falta publicar a planilha de respostas e colocar o link no site.";
+    return;
+  }
+  let linhas = [];
+  try {
+    const r = await fetch(DEMANDAS_CSV, {cache:"no-store"});
+    if (!r.ok) throw new Error("http " + r.status);
+    linhas = lerCSV(await r.text());
+  } catch(e){
+    aviso.hidden = false; aviso.textContent = "Não consegui carregar as demandas agora. Tente atualizar em instantes."; return;
+  }
+  const cab = linhas[0] || [], dados = linhas.slice(1).reverse(); // mais recentes primeiro
+  document.getElementById("demCount").textContent = dados.length;
+  vazio.hidden = dados.length > 0;
+  const ehData = k => /carimbo|timestamp|data\/hora/i.test(k);
+  dados.forEach(r => {
+    const card = h("div","dem");
+    const iData = cab.findIndex(ehData);
+    const campos = cab.map((k,i) => [k, (r[i] || "").trim(), i]).filter(x => x[1] && !ehData(x[0]));
+    if (!campos.length) return;
+    card.appendChild(h("h3", null, campos[0][1]));
+    if (iData >= 0 && r[iData]) card.appendChild(h("div","quando","Recebida em " + r[iData]));
+    campos.slice(1).forEach(([k,v]) => {
+      const l = h("div","linha"); l.appendChild(h("span","k",k));
+      const vv = h("span","v"); comLinks(vv, v); l.appendChild(vv); card.appendChild(l);
+    });
+    lista.appendChild(card);
+  });
 }
 function initDia(){
   document.getElementById("diaFechar").addEventListener("click", () => document.getElementById("dlgDia").close());
@@ -987,6 +1071,8 @@ function initSug(){
   document.getElementById("tabCal").addEventListener("click", () => showTab("cal"));
   document.getElementById("tabSug").addEventListener("click", () => showTab("sug"));
   document.getElementById("sugRefresh").addEventListener("click", carregarEstado);
+  document.getElementById("tabDem").addEventListener("click", () => showTab("dem"));
+  document.getElementById("demRefresh").addEventListener("click", carregarDemandas);
   document.getElementById("sugCancel").addEventListener("click", () => document.getElementById("dlg").close());
   document.getElementById("sugForm").addEventListener("submit", async e => {
     e.preventDefault();
