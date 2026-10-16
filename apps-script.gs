@@ -53,7 +53,9 @@ function sanear_(v) { // impede que um texto vire fórmula na planilha
 }
 function ehAdmin_(c) {
   const s = PropertiesService.getScriptProperties().getProperty('ADMIN_SENHA');
-  return c.pessoa === 'Admin' && !!s && c.senha === s;
+  // o site envia o que foi digitado em minúsculas e sem espaços; aqui a senha guardada é tratada igual (maiúsculas e espaços não importam)
+  const norm = t => String(t === null || t === undefined ? '' : t).trim().toLowerCase();
+  return c.pessoa === 'Admin' && !!s && norm(s) !== '' && norm(c.senha) === norm(s);
 }
 const EQUIPE = ['João', 'Renata', 'Isabela', 'Marcos', 'Wandinho', 'Mariana', 'Flávio'];
 function ehPessoa_(c) { // a equipe entra só com o nome
