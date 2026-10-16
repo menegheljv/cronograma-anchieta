@@ -679,7 +679,21 @@ async function post(c){
   if (!SUGGEST_URL) return apiLocal(c);
   const r = await fetch(SUGGEST_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(c)});
   const j = await r.json();
-  if (!j.ok) throw new Error(j.erro || "falha");
+  if (!j.ok){
+    if (j.erro === "senha" && ADMIN){
+      // descobre por que a senha de administrador não confere, para mostrar o motivo na tela
+      let dica = "";
+      try {
+        const k = await (await fetch(SUGGEST_URL + "?acao=diag", {cache:"no-store"})).json();
+        if (!k.versao) dica = "O Apps Script publicado ainda é a versão antiga. Cole o código novo, salve e use Implantar > Gerenciar implantações > lápis > Nova versão > Implantar.";
+        else if (!k.temSenha) dica = "A propriedade ADMIN_SENHA não existe neste projeto do Apps Script (Configurações do projeto > Propriedades do script).";
+        else if (k.tamanhoSenha !== SENHA.length) dica = "A ADMIN_SENHA salva tem " + k.tamanhoSenha + " caracteres e a digitada tem " + SENHA.length + ". O valor deve ser só a senha, sem texto extra.";
+        else dica = "A ADMIN_SENHA salva tem o mesmo tamanho, mas as letras são diferentes da senha digitada.";
+      } catch(x){}
+      throw new Error("senha|" + dica);
+    }
+    throw new Error(j.erro || "falha");
+  }
   return j;
 }
 async function carregarEstado(){
@@ -1468,7 +1482,7 @@ function buildMonths(){
 }
 
 // ---------- Edição (somente admin) ----------
-const msgErro = err => err && err.message === "senha" ? "A senha de administrador não confere." : "Não consegui salvar. Tente de novo em instantes.";
+const msgErro = err => err && /^senha/.test(err.message || "") ? "A senha de administrador não confere." + ((err.message.split("|")[1]) ? "\n\n" + err.message.split("|")[1] : "") : "Não consegui salvar. Tente de novo em instantes.";
 let edCtx = null;
 function abrirEd(modo, ctx){
   document.getElementById("dlgDia").close();
