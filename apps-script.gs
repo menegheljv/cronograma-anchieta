@@ -185,6 +185,10 @@ function contatos_() {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.acao === 'diag') {   // diagnóstico: mostra a versão do script e se a senha existe (nunca mostra a senha)
+    const sp = PropertiesService.getScriptProperties().getProperty('ADMIN_SENHA');
+    return resp_({ versao: 'senha-normalizada-v2', temSenha: !!sp, tamanhoSenha: sp ? String(sp).trim().length : 0, temEspacoOuTexto: sp ? /\s/.test(String(sp).trim()) : false });
+  }
   if (e && e.parameter && e.parameter.acao === 'demandas') {
     try { return resp_({ demandas: demandas_() }); }
     catch (err) { return resp_({ demandas: [], erro: String(err) }); }
