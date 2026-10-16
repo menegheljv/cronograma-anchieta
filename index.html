@@ -648,6 +648,13 @@ function apiLocal(c){
     let a = e.alteracoes.find(x => x.chave === c.chave);
     if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
     a.legenda = c.legenda; a.horario = c.horario; a.colab = c.colab;
+  } else if (c.acao === "concluir"){
+    const okAdm = ADMIN && cyrb53(c.senha || "") === ADMIN_HASH;
+    const okPes = !!USER && c.pessoa === USER && c.responsavel === USER;
+    if (!okAdm && !okPes) throw new Error("senha");
+    let a = e.alteracoes.find(x => x.chave === c.chave);
+    if (!a){ a = {chave:c.chave}; e.alteracoes.push(a); }
+    a.legenda = c.legenda; a.horario = c.horario; a.colab = c.colab; a.feito = true; a.feitoPor = c.pessoa;
   } else if (c.acao === "marcar"){
     const hs = cyrb53(c.senha || "");
     const okAdm = ADMIN && hs === ADMIN_HASH;
@@ -696,10 +703,29 @@ async function post(c){
   }
   return j;
 }
+let escritasPend = 0;   // gravações enviadas e ainda não confirmadas pelo servidor
+async function gravar(cmd, otimista){
+  // mostra o resultado na hora e envia ao servidor em segundo plano; se falhar, volta ao que o servidor tem
+  if (otimista){ ALT[cmd.chave] = Object.assign({chave:cmd.chave}, ALT[cmd.chave] || {}, otimista); atualizar(); }
+  escritasPend++;
+  try {
+    try { await post(cmd); }
+    catch(err){
+      if (cmd.acao === "concluir" && /desconhecida/.test(err.message || "")){   // script antigo: faz em dois passos
+        await post(Object.assign({}, cmd, {acao:"detalhar"}));
+        await post({acao:"marcar", chave:cmd.chave, feito:true, responsavel:cmd.responsavel});
+      } else throw err;
+    }
+  } catch(err){ escritasPend--; await carregarEstado(); throw err; }
+  escritasPend--;
+  if (!escritasPend) carregarEstado();
+}
 async function carregarEstado(){
+  if (escritasPend > 0) return;
   let e = {};
   if (SUGGEST_URL){
     try { const r = await fetch(SUGGEST_URL + "?acao=estado"); e = await r.json(); } catch(x){ e = {}; }
+    if (escritasPend > 0) return;   // uma gravação começou durante a leitura: esta leitura já está velha
   } else e = lerEstadoLocal();
   SUGS = (e.sugestoes || []).filter(x => x && TIPOS[x.tipo] && (!x.link || linkOk(x.link)) && dataOk(x.data)).map(x => Object.assign({}, x, {status: x.status || "pendente"})).filter(x => x.status !== "rejeitada");
   EXTRAS = (e.extras || []).filter(x => x && x.id && dataOk(x.data) && x.titulo && OWNERS[x.responsavel || "A definir"]);
@@ -1065,12 +1091,13 @@ function formDados(c, x, opc = {}){
     if (!hr.value){ ok.textContent = "Escolha o horário."; hr.focus(); return; }
     if (!sem && !co.value.trim()){ ok.textContent = "Escolha o colab ou clique em Sem colab."; co.focus(); return; }
     sv.disabled = true; ok.textContent = "Salvando...";
-    try {
-      await post({acao:"detalhar", chave:x.id, responsavel:x.owner, legenda:sem ? " " : (ta.value.trim() || " "), horario:hr.value, colab:sem ? " " : (co.value.trim() || " ")});
-      if (opc.marcar) await post({acao:"marcar", chave:x.id, feito:true, responsavel:x.owner});
-      editandoLeg.delete(x.id); legSujo = false; await carregarEstado();
-      if (opc.aoSalvar) opc.aoSalvar();
-    } catch(err){ sv.disabled = false; ok.textContent = msgErro(err); }
+    const leg = sem ? "" : ta.value.trim(), colabV = sem ? "" : co.value.trim(), pessoa = ADMIN ? "Admin" : USER;
+    const cmd = {acao: opc.marcar ? "concluir" : "detalhar", chave:x.id, responsavel:x.owner, legenda:leg || " ", horario:hr.value, colab:colabV || " "};
+    editandoLeg.delete(x.id); legSujo = false;
+    // aparece na hora; o envio ao servidor segue em segundo plano
+    gravar(cmd, Object.assign({legenda:leg, horario:hr.value, colab:colabV}, opc.marcar ? {feito:true, feitoPor:pessoa} : {}))
+      .catch(err => alert(msgErro(err)));
+    if (opc.aoSalvar) opc.aoSalvar();
   });
 }
 function renderLeg(){
@@ -1112,7 +1139,8 @@ function renderLeg(){
       const un = h("button","btn","Desmarcar ✓"); un.type = "button";
       un.addEventListener("click", async () => {
         if (!confirm("Desmarcar o check desta pauta? Ela sai desta aba e volta a ficar sem check.")) return;
-        try { await post({acao:"marcar", chave:x.id, feito:false, responsavel:x.owner}); editandoLeg.delete(x.id); legSujo = false; await carregarEstado(); } catch(err){ alert(msgErro(err)); }
+        editandoLeg.delete(x.id); legSujo = false;
+        gravar({acao:"marcar", chave:x.id, feito:false, responsavel:x.owner}, {feito:false}).catch(err => alert(msgErro(err)));
       });
       dir.appendChild(un);
     }
@@ -1183,7 +1211,7 @@ function cardProg(x, postada){
   if (ADMIN && (!postada || x.data === hojeIso())){
     const b = h("button", x.programada ? "btn" : "btn pri", x.programada ? "Desfazer" : (x.data === hojeIso() ? "Marcar como postada" : "Marcar como programada")); b.type = "button";
     b.addEventListener("click", async () => {
-      try { await post({acao:"alterar", chave:x.id, programada:!x.programada}); await carregarEstado(); } catch(err){ alert(msgErro(err)); }
+      gravar({acao:"alterar", chave:x.id, programada:!x.programada}, {programada:!x.programada}).catch(err => alert(msgErro(err)));
     });
     ac.appendChild(b);
   }
@@ -1262,11 +1290,8 @@ async function alternarFeito(it){
       return;
     }
   }
-  try {
-    await post({acao:"marcar", chave:it[4], feito:!it[6], responsavel:it[2]});
-    await carregarEstado();
-  }
-  catch(err){ alert(msgErro(err)); }
+  const pessoa = ADMIN ? "Admin" : USER;
+  gravar({acao:"marcar", chave:it[4], feito:!it[6], responsavel:it[2]}, {feito:!it[6], feitoPor:pessoa}).catch(err => alert(msgErro(err)));
 }
 let diaAberto = 0;
 function abrirDia(d){

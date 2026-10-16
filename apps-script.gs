@@ -68,14 +68,18 @@ function achar_(sh, chave) { // linha (1-based) da primeira coluna igual a chave
   return 0;
 }
 function upsertAlteracao_(chave, campos) {
+  // uma leitura e uma gravação por pauta (antes eram várias chamadas, o que deixava o check lento)
   const sh = aba_('Alteracoes');
   const cab = ESQUEMA.Alteracoes;
   let linha = achar_(sh, chave);
-  if (!linha) { sh.appendRow([chave]); linha = sh.getLastRow(); sh.getRange(linha, 1, 1, cab.length).setNumberFormat('@'); sh.getRange(linha, 1).setValue(chave); }
+  let fila;
+  if (linha) fila = sh.getRange(linha, 1, 1, cab.length).getValues()[0];
+  else { fila = cab.map(() => ''); fila[0] = chave; linha = sh.getLastRow() + 1; sh.getRange(linha, 1, 1, cab.length).setNumberFormat('@'); }
   Object.keys(campos).forEach(k => {
     const i = cab.indexOf(k);
-    if (i > 0) sh.getRange(linha, i + 1).setValue(typeof campos[k] === 'boolean' ? campos[k] : sanear_(campos[k]));
+    if (i > 0) fila[i] = typeof campos[k] === 'boolean' ? campos[k] : sanear_(campos[k]);
   });
+  sh.getRange(linha, 1, 1, cab.length).setValues([fila]);
 }
 
 function doPost(e) {
@@ -103,6 +107,15 @@ function doPost(e) {
       const leg = String(c.legenda || '').trim().slice(0, 2200), hor = String(c.horario || '').trim(), col = String(c.colab || '').trim().slice(0, 100);
       if (hor && !/^\d{2}:\d{2}$/.test(hor)) return resp_({ ok: false, erro: 'dados inválidos' });
       upsertAlteracao_(String(c.chave), { legenda: leg, horario: hor, colab: col });
+      return resp_({ ok: true });
+    }
+
+    if (a === 'concluir') {
+      // legenda, horário, colab e o check de uma vez só (a própria pessoa nas pautas dela, ou o administrador)
+      if (!(ehAdmin_(c) || (ehPessoa_(c) && c.pessoa === c.responsavel))) return resp_({ ok: false, erro: 'senha' });
+      const leg = String(c.legenda || '').trim().slice(0, 2200), hor = String(c.horario || '').trim(), col = String(c.colab || '').trim().slice(0, 100);
+      if (hor && !/^\d{2}:\d{2}$/.test(hor)) return resp_({ ok: false, erro: 'dados inválidos' });
+      upsertAlteracao_(String(c.chave), { legenda: leg, horario: hor, colab: col, feito: true, feitoPor: c.pessoa });
       return resp_({ ok: true });
     }
 
