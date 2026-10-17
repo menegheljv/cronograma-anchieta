@@ -1650,6 +1650,15 @@ function renderSug(){
       });
       ac.appendChild(ap); ac.appendChild(rj);
     }
+    if (ADMIN && x.status === "aprovada"){
+      // tira só a sugestão da lista (usa a mesma gravação de "rejeitar"); a pauta criada a partir dela continua no calendário
+      const ex = h("button","btn","Excluir"); ex.type = "button";
+      ex.addEventListener("click", async () => {
+        if (!confirm("Excluir esta sugestão da lista? A pauta aprovada continua no calendário.")) return;
+        try { await post({acao:"rejeitar", id:x.id}); await carregarEstado(); } catch(err){ alert(msgErro(err)); }
+      });
+      ac.appendChild(ex);
+    }
     row.appendChild(ac);
     box.appendChild(row);
   });
