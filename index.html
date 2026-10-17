@@ -1233,7 +1233,7 @@ function cardProg(x, postada){
 }
 function renderProg(){
   const hoje = hojeIso();
-  const todas = listaProgramar();
+  const todas = listaProgramar().filter(x => x.formato !== "Cobertura");   // Cobertura é postada na hora: não passa pela aba Programar
   // ordem da aba: para programar, já programadas e, por último, as postadas (dia que já passou)
   const postadas = todas.filter(x => x.data < hoje || (x.data === hoje && x.programada)).sort((a,b) => b.data.localeCompare(a.data));
   const futuras = todas.filter(x => x.data >= hoje && !(x.data === hoje && x.programada));
