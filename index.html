@@ -945,6 +945,7 @@ function gerarLegenda(titulo, formato, info){
   return t + " 📢\n" + (util ? util + ".\n" : "Fique por dentro das novidades da Prefeitura de Anchieta.\n") + "Acompanhe nossas redes e compartilhe com quem precisa saber! 💚" + fecha(tag);
 }
 const semLegenda = f => f === "Stories";
+const ehCobertura = f => f === "Cobertura";   // Cobertura: sem legenda, horário e colab; com ✓ vai direto para Postadas
 // Variações da legenda: mesmo conteúdo, com outra chamada para ação (conforme o tom do texto).
 const CHAMADAS = {
   festivo: ["Marque quem você quer homenagear! 💚", "Compartilhe esse carinho com a família e os amigos! 🤗", "Deixe a sua mensagem nos comentários! 💬", "Curta, comente e compartilhe! 📲"],
@@ -1000,7 +1001,7 @@ async function salvarArrobas(lista, atualizarTela = true){
 const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario && x.colab);
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
 const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
-const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso() && !semLegenda(x.formato));   // Stories não passa por aqui: vai direto para Programar
+const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso() && !semLegenda(x.formato) && !ehCobertura(x.formato));   // Stories não passa por aqui: vai direto para Programar. Cobertura vai direto para Postadas
 const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
 // Formulário de legenda, horário e colab. opc.marcar: só marca ✓ depois de salvar tudo; opc.aoSalvar/aoCancelar: o que fazer depois.
 function formDados(c, x, opc = {}){
@@ -1215,7 +1216,7 @@ function cardProg(x, postada){
   const ac = h("div","acoesp");
   if (postada) ac.appendChild(h("span","progtag","✓ Postada"));
   else if (x.programada) ac.appendChild(h("span","progtag","✓ Programada"));
-  if (ADMIN && (!postada || x.data === hojeIso())){
+  if (ADMIN && !ehCobertura(x.formato) && (!postada || x.data === hojeIso())){
     const b = h("button", x.programada ? "btn" : "btn pri", x.programada ? "Desfazer" : (x.data === hojeIso() ? "Marcar como postada" : "Marcar como programada")); b.type = "button";
     b.addEventListener("click", async () => {
       gravar({acao:"alterar", chave:x.id, programada:!x.programada}, {programada:!x.programada}).catch(err => alert(msgErro(err)));
@@ -1229,7 +1230,7 @@ function cardProg(x, postada){
   const lf = h("div","linha"); lf.appendChild(h("span","k","Formato")); lf.appendChild(fv); c.appendChild(lf);
   c.appendChild(linhaPauta("Título", x.titulo, false));
   c.appendChild(linhaPauta("Informações", String(x.obs || "").trim(), false));
-  if (!semLegenda(x.formato)){   // Stories: sem legenda, horário nem colab
+  if (!semLegenda(x.formato) && !ehCobertura(x.formato)){   // Stories e Cobertura: sem legenda, horário nem colab
     c.appendChild(linhaPauta(x.legenda ? "Legenda" : "Legenda (sugerida)", x.legenda || gerarLegenda(x.titulo, x.formato, x.obs), false));
     c.appendChild(linhaPauta("Horário", x.horario, false));
     c.appendChild(linhaPauta("Colab", x.colab, false));
@@ -1240,10 +1241,11 @@ function cardProg(x, postada){
 }
 function renderProg(){
   const hoje = hojeIso();
-  const todas = listaProgramar().filter(x => x.formato !== "Cobertura");   // Cobertura é postada na hora: não passa pela aba Programar
+  const todas = listaProgramar();
   // ordem da aba: para programar, já programadas e, por último, as postadas (dia que já passou)
-  const postadas = todas.filter(x => x.data < hoje || (x.data === hoje && x.programada)).sort((a,b) => b.data.localeCompare(a.data));
-  const futuras = todas.filter(x => x.data >= hoje && !(x.data === hoje && x.programada));
+  // Cobertura com ✓ já entra em Postadas, sem passar por Programar
+  const postadas = todas.filter(x => ehCobertura(x.formato) || x.data < hoje || (x.data === hoje && x.programada)).sort((a,b) => b.data.localeCompare(a.data));
+  const futuras = todas.filter(x => !ehCobertura(x.formato) && x.data >= hoje && !(x.data === hoje && x.programada));
   const fila = futuras.filter(x => !x.programada), feitas = futuras.filter(x => x.programada);
   contador("progCount", fila.length);
   const a = document.getElementById("progLista"), b = document.getElementById("progFeitas"), c = document.getElementById("progPostadas");
@@ -1288,7 +1290,7 @@ let pedidoCheck = null;   // pauta que está pedindo legenda/horário/colab ante
 async function alternarFeito(it){
   if (!it[6]){
     const x = {id:it[4], data:isoDia(it[0]), titulo:it[1], owner:it[2], obs:it[3], formato:it[7], legenda:it[10] || "", horario:it[11] || "", colab:it[12] || ""};
-    if (!semLegenda(x.formato) && !dadosPreenchidos(x)){
+    if (!semLegenda(x.formato) && !ehCobertura(x.formato) && !dadosPreenchidos(x)){
       // sem legenda, horário e colab escolhidos a pessoa não pode dar o check
       // leva a pessoa para Dados de postagem, onde ela escolhe tudo e só então o ✓ é dado
       pedidoCheck = x; legSujo = true;
