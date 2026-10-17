@@ -40,7 +40,7 @@ function ler_(nome) {
   const cab = v[0];
   return v.slice(1).filter(r => r[0] !== '').map(r => {
     const o = {};
-    cab.forEach((k, i) => { o[k] = (k === 'removida' || k === 'feito' || k === 'programada') ? (r[i] === true || r[i] === 'TRUE') : txt_(r[i], k === 'horario'); });
+    cab.forEach((k, i) => { o[k] = (k === 'removida' || k === 'feito' || k === 'programada') ? (r[i] === true || /^true$/i.test(String(r[i]).trim())) : txt_(r[i], k === 'horario'); });
     return o;
   });
 }
