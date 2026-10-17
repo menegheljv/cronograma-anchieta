@@ -724,9 +724,16 @@ async function carregarEstado(){
   if (escritasPend > 0) return;
   let e = {};
   if (SUGGEST_URL){
-    try { const r = await fetch(SUGGEST_URL + "?acao=estado"); e = await r.json(); } catch(x){ e = {}; }
+    try { const r = await fetch(SUGGEST_URL + "?acao=estado"); e = await r.json(); guardarCache(CACHE_ESTADO, e); } catch(x){ e = {}; }
     if (escritasPend > 0) return;   // uma gravação começou durante a leitura: esta leitura já está velha
   } else e = lerEstadoLocal();
+  aplicarEstado(e);
+}
+// O Apps Script leva alguns segundos para responder. Mostramos o último estado guardado neste navegador na hora e atualizamos quando a resposta chega.
+const CACHE_ESTADO = "cronoCacheEstado", CACHE_DEMANDAS = "cronoCacheDemandas";
+function guardarCache(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(x){} }
+function lerCache(k){ try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(x){ return null; } }
+function aplicarEstado(e){
   SUGS = (e.sugestoes || []).filter(x => x && TIPOS[x.tipo] && (!x.link || linkOk(x.link)) && dataOk(x.data)).map(x => Object.assign({}, x, {status: x.status || "pendente"})).filter(x => x.status !== "rejeitada");
   EXTRAS = (e.extras || []).filter(x => x && x.id && dataOk(x.data) && x.titulo && OWNERS[x.responsavel || "A definir"]);
   ALT = {};
@@ -1749,9 +1756,12 @@ async function carregarDemandas(){
   if (!SUGGEST_URL){
     DEMS = DEMANDAS_FIXAS.filter(desdeData); renderDem(); return;
   }
+  const guardadas = lerCache(CACHE_DEMANDAS);
+  if (guardadas && Array.isArray(guardadas.demandas)){ DEMS = guardadas.demandas.filter(desdeData); renderDem(); }
   try {
     const r = await fetch(SUGGEST_URL + "?acao=demandas", {cache:"no-store"});
     const j = await r.json();
+    if (!j.erro) guardarCache(CACHE_DEMANDAS, j);
     DEMS = (Array.isArray(j.demandas) ? j.demandas : []).filter(desdeData);
     if ((ADMIN || USER) && !j.erro){   // o contato só vem para quem entrou (equipe ou administrador)
       try { const c = await post({acao:"contatos"}); DEMS.forEach(d => { if (c.contatos && c.contatos[d.id]) d.contato = c.contatos[d.id]; }); } catch(x){}
@@ -1821,6 +1831,8 @@ function startApp(){
   });
   let i = MONTHS.findIndex(({y,m}) => y===now.getFullYear() && m===now.getMonth());
   setMonth(i < 0 ? 0 : i);
+  const guardado = SUGGEST_URL && lerCache(CACHE_ESTADO);
+  if (guardado) aplicarEstado(guardado);
   carregarEstado();
   // com a planilha conectada, os ✓ e as alterações dos outros chegam sozinhos
   if (SUGGEST_URL) setInterval(() => {
