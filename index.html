@@ -820,7 +820,7 @@ function hashtagDe(t){
 }
 // Legenda sugerida automaticamente a partir do título, do formato e das informações da pauta.
 // O tom muda conforme o tipo da data: festiva, homenagem, conscientização, campanha de saúde, patriótica...
-function gerarLegenda(titulo, formato, info){
+function gerarLegendaBase(titulo, formato, info){
   if (formato === "Stories") return "";   // stories nunca leva legenda
   let t = String(titulo || "").trim().replace(/^(gravar|produzir|criar|fazer)\s+/i, "");
   t = t.charAt(0).toUpperCase() + t.slice(1);
@@ -833,7 +833,7 @@ function gerarLegenda(titulo, formato, info){
   const tem = re => re.test(tl);
 
   // ----- rotinas do cronograma -----
-  if (formato === "Cobertura") return "Cobertura: " + t.replace(/^cobertura( de| do| da)? /i, "") + " 📸\nAcompanhe os melhores momentos e fique por dentro de tudo o que aconteceu. A Prefeitura de Anchieta esteve presente! 💚" + fecha(tag);
+  if (formato === "Cobertura") return "Cobertura: " + t.replace(/^cobertura:?( de| do| da)?\s+/i, "") + " 📸\nAcompanhe os melhores momentos e fique por dentro de tudo o que aconteceu. A Prefeitura de Anchieta esteve presente! 💚" + fecha(tag);
   if (tem(/antirrabica/)) return "Vacina antirrábica: cachorro e gato vacinados, família protegida! 🐶🐱💉\nA vacina é gratuita e protege seu pet e você contra a raiva, doença grave e fatal. Leve seu animal ao ponto de vacinação e mantenha a carteirinha em dia." + fecha('#VacinaAntirrabica', '#RaivaTemPrevencao');
   if (tem(/corpus christi/)) return "Corpus Christi ✝️\nData de fé e tradição para muitas famílias. É ponto facultativo: confira o funcionamento dos serviços municipais nos canais oficiais da Prefeitura de Anchieta." + fecha("#CorpusChristi");
   if (tem(/^sao joao/)) return "É tempo de São João! 🔥🎶\nQuadrilha, fogueira, comidas típicas e muita animação. Aproveite as festas juninas com segurança e alegria! 🌽" + fecha("#FestaJunina");
@@ -944,6 +944,30 @@ function gerarLegenda(titulo, formato, info){
   if (/^dia (do|da|de|dos|das|mundial|nacional|internacional)/.test(tl)) return t + " 💚\n" + (util ? util + ". " : "") + "A Prefeitura de Anchieta se une a essa data. Compartilhe esta mensagem!" + fecha(tag);
   return t + " 📢\n" + (util ? util + ".\n" : "Fique por dentro das novidades da Prefeitura de Anchieta.\n") + "Acompanhe nossas redes e compartilhe com quem precisa saber! 💚" + fecha(tag);
 }
+// Modelo único de legenda: título, 2 parágrafos curtos (o último com chamada para ação) e hashtags, cada bloco separado por uma linha em branco.
+const CTA_RE = /(compartilh|marque|conte |conta pra|venha|procure|participe|denuncie|fa[cç]a |adote|siga|acompanhe|ligue|doe |salve|deixe|confira|vista |aproveite|pense |converse|esperamos|cuide|vacine|use |respeite|valorize|assista|curta|\?[^\p{L}]*$)/iu;
+function frasesDe(texto){
+  const frases = [];
+  String(texto || "").trim().split(/(?<=[.!?])\s+/).filter(Boolean).forEach(f => {
+    if (frases.length && /^[^\p{L}\p{N}]/u.test(f)) frases[frases.length - 1] += " " + f;   // emoji solto ou 📍 volta para a frase anterior
+    else frases.push(f);
+  });
+  return frases;
+}
+const montarLegenda = (...blocos) => blocos.filter(Boolean).join("\n\n");
+function gerarLegenda(titulo, formato, info){
+  const base = gerarLegendaBase(titulo, formato, info);
+  if (!base) return base;
+  const k = base.lastIndexOf("\n\n#");
+  const corpo = (k >= 0 ? base.slice(0, k) : base).trim(), tags = k >= 0 ? base.slice(k + 2).trim() : "";
+  const linhas = corpo.split("\n");
+  const frases = frasesDe(linhas.slice(1).join(" "));
+  const corte = Math.ceil(frases.length / 2);   // 1º parágrafo: primeira metade das frases; 2º: o resto, fechando com a chamada
+  const p1 = frases.slice(0, corte).join(" "), resto = frases.slice(corte);
+  let p2 = resto.join(" ");
+  if (!resto.length || !CTA_RE.test(resto[resto.length - 1])) p2 = (p2 ? p2.replace(/\s*[^\p{L}\p{N}\s.!?)]+$/u, "") + " " : "") + CHAMADAS[tomLegenda(base)][0];   // tira o emoji final antes de juntar a chamada
+  return montarLegenda(linhas[0].trim(), p1, p2, tags);
+}
 const semLegenda = f => f === "Stories";
 const ehCobertura = f => f === "Cobertura";   // Cobertura: sem legenda, horário e colab; com ✓ vai direto para Postadas
 // Variações da legenda: mesmo conteúdo, com outra chamada para ação (conforme o tom do texto).
@@ -962,20 +986,21 @@ function tomLegenda(base){
     : /Feliz|Parabéns|Homenagem|homenagem|Obrigado|Hoje é/i.test(base) ? "festivo" : "neutro";
 }
 function variarLegenda(base, n){
-  // cada opção muda a estrutura do texto (gancho, tamanho, tópicos, ordem), a chamada final e as hashtags
+  // todas as opções seguem o modelo (título, 2 parágrafos curtos, hashtags); muda a chamada para ação, o título e as hashtags
   if (!base || !n) return base;
-  const k = base.lastIndexOf("\n\n#");
-  const corpo = (k >= 0 ? base.slice(0, k) : base).replace(/\n+$/, ""), tags = k >= 0 ? base.slice(k + 2).trim() : "";
-  const linhas = corpo.split("\n"), titulo = linhas[0].trim();
-  const frases = linhas.slice(1).join(" ").trim().split(/(?<=[.!?])\s+/).filter(Boolean);
-  const tom = tomLegenda(base), cta = CHAMADAS[tom][(n - 1) % CHAMADAS[tom].length], ab = ABERTURAS[tom][n % ABERTURAS[tom].length];
+  const blocos = base.split(/\n\n+/);
+  const tags = /^#/.test(blocos[blocos.length - 1]) ? blocos.pop() : "";
+  const titulo = blocos[0] || "", p1 = blocos[1] || "";
+  const fr2 = frasesDe(blocos.slice(2).join(" "));
+  const miolo = fr2.length && CTA_RE.test(fr2[fr2.length - 1]) ? fr2.slice(0, -1).join(" ") : fr2.join(" ");   // 2º parágrafo sem a chamada atual
+  const tom = tomLegenda(base), cta = CHAMADAS[tom][(n - 1) % CHAMADAS[tom].length];
   const ht = tags.split(/\s+/).filter(Boolean);
   if (!ht.length) ht.push("#Anchieta", "#PrefeituraDeAnchieta");   // toda legenda leva hashtag
-  const junta = (...p) => p.filter(Boolean).join("\n\n");
-  if (n === 1) return junta(ab + "\n" + titulo + (frases.length ? "\n" + frases.join(" ") : ""), cta, ht.join(" "));
-  if (n === 2) return junta(titulo + (frases[0] ? "\n" + frases[0] : ""), cta, ht.slice(0, 2).join(" "));
-  if (n === 3) return junta("📌 " + titulo, frases.map(f => "▪️ " + f).join("\n"), cta, ht.join(" "));
-  return junta(ab + "\n" + frases.join(" "), titulo + "\n" + cta, [...ht].reverse().join(" "));
+  const p2 = [miolo, cta].filter(Boolean).join(" ");
+  if (n === 1) return montarLegenda(titulo, p1, p2, ht.join(" "));
+  if (n === 2) return montarLegenda(titulo, p1, cta, ht.slice(0, 2).join(" "));
+  if (n === 3) return montarLegenda("📌 " + titulo, p1, p2, ht.join(" "));
+  return montarLegenda(titulo, p1, p2, [...ht].reverse().join(" "));
 }
 const HORARIOS_PRONTOS = ["08:00", "12:00", "16:00"];
 // ---------- Arrobas prontos (para o campo Colab) ----------
