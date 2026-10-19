@@ -481,7 +481,7 @@ const OUT_2026 = [
 [21,"Dia Nacional da Alimentação na Escola","João","Produzir card feed"],
 [22,"Aulas de música nas escolas de Anchieta","Wandinho","Produzir vídeo. Inclui a Eletiva de Música: gravação na terça (20), das 13:20 às 15:00. Vídeo de música."],
 [23,"A Semana em 1 min","João","Produzir vídeo"],
-[24,"Atleta Destaque","Isabela","Material pronto"],
+[24,"Atleta Destaque: Theodoro Soares","Isabela","Material pronto"],
 [25,"Dia do Dentista","Renata","Card stories"],
 [26,"Dia do Trabalhador da Construção Civil","Marcos","Produzir vídeo"],
 [27,"Você conhece um local que precisa de um PEV?","Isabela","Produzir card feed"],
@@ -847,6 +847,8 @@ function gerarLegendaBase(titulo, formato, info){
   if (tem(/^tbt/)) return "#TBT " + t.replace(/^tbt\s*/i, "").trim() + " 🎞️\nRelembre os melhores momentos vividos em Anchieta. Qual foi o seu preferido? Conta pra gente nos comentários! 💬" + fecha("#TBT");
   if (tem(/final de semana|turismo/)) return "Anchieta tem cenários que encantam! 🌊☀️\nBelas praias, história e natureza para curtir com a família e os amigos. Venha viver o melhor do litoral capixaba! 📍 Anchieta – ES" + fecha("#TurismoAnchieta", "#VisiteAnchieta");
 
+  if (tem(/theodoro soares/)) return "Atleta Destaque: Theodoro Soares 🏆\n\nA trajetória de Theodoro Soares começou na infância, no futebol de campo, onde conquistou os primeiros títulos. Em 2024, a convite de Bruno Xavier, ele passou a jogar futebol de areia e, com o apoio da Prefeitura de Anchieta e da Secretaria Municipal de Esportes e da Juventude, abriu as portas para representar o esporte na Europa, onde foi artilheiro. Desde então, soma títulos coletivos e individuais e defende a camisa do Anchieta Beach Soccer.\n\nRecentemente, foi campeão e artilheiro do Mundial Universitário, representando o Brasil em Portugal. Também disputou o campeonato brasileiro e a Copa Libertadores, sempre com grande destaque. Hoje, vive do esporte e leva o nome de Anchieta por onde passa, com disciplina, humildade, perseverança e fé. Theodoro agradece a Deus, à família, ao Bruno Xavier e à Prefeitura pelo apoio de sempre. Deixe o seu parabéns para esse orgulho anchietense!" + fecha("#AtletaDestaque", "#BeachSoccer");   // legenda longa, só para este post: conta a história do atleta
+
   // ----- datas festivas e feriados -----
   if (tem(/natal/)) return "Feliz Natal! 🎄✨\nQue este seja um tempo de paz, esperança e união. A Prefeitura de Anchieta deseja a todos os anchietenses um Natal abençoado, cheio de amor e alegria! ❤️" + fecha("#FelizNatal");
   if (tem(/ano novo|confraternizacao universal|reveillon/)) return "Feliz Ano Novo! 🎆🥂\nQue o novo ano traga saúde, trabalho e muitas conquistas para todos nós. A Prefeitura de Anchieta agradece a parceria de cada morador e deseja um tempo de realizações! 💚" + fecha("#FelizAnoNovo");
@@ -959,7 +961,7 @@ const montarLegenda = (...blocos) => blocos.filter(Boolean).join("\n\n");
 const EMOJI_RE = /(?:\p{Regional_Indicator}{2}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu;
 const semEmoji = t => t.replace(EMOJI_RE, "").replace(/\uFE0F/g, "").replace(/[ 	]{2,}/g, " ").replace(/\s+([.!?,;:])/g, "$1").trim();
 // Par do emoji do título: o do fim da chamada nunca repete o do título, mas combina com o tema.
-const PAR_EMOJI = {"💗":"👩","💙":"💪","💛":"🌻","💜":"🦋","🧡":"🤝","❤️":"🩸","🤍":"🕊️","💚":"🌿","🇧🇷":"💚","👏":"💚","📚":"✏️","🎄":"✨","🎆":"🥂","🐰":"🍫","🎭":"🎉","💐":"💚","🎈":"🧸","💕":"🌅","🎉":"💚","🙏":"✝️","✝️":"🙏","🔥":"🎶","⚽":"🇧🇷","🚌":"🤝","♻️":"🌎","🎶":"🎉","👁️":"👓","📅":"💚","🎞️":"💬","🌊":"☀️","🦐":"🎶","🏃":"💪","📸":"💚","📢":"💚","💧":"🌎","🌳":"🌎","🌎":"💚","🌴":"☀️","⚖️":"🤝","♿":"💙","🍎":"💚","🌾":"🚜","🏗️":"💪","🎣":"⚓","🛒":"✅","👩‍🏫":"📚","👨‍👧‍👦":"💙","🕊️":"🤍","🛍️":"💚","😄":"💚","☕":"😊","😊":"🦷","🌸":"🌼","📜":"✊","🐶":"🐱","🤝":"💚"};
+const PAR_EMOJI = {"💗":"👩","💙":"💪","💛":"🌻","💜":"🦋","🧡":"🤝","❤️":"🩸","🤍":"🕊️","💚":"🌿","🇧🇷":"💚","👏":"💚","📚":"✏️","🎄":"✨","🎆":"🥂","🐰":"🍫","🎭":"🎉","💐":"💚","🎈":"🧸","💕":"🌅","🎉":"💚","🙏":"✝️","✝️":"🙏","🔥":"🎶","⚽":"🇧🇷","🚌":"🤝","♻️":"🌎","🎶":"🎉","👁️":"👓","📅":"💚","🎞️":"💬","🌊":"☀️","🦐":"🎶","🏃":"💪","📸":"💚","📢":"💚","💧":"🌎","🌳":"🌎","🌎":"💚","🌴":"☀️","⚖️":"🤝","♿":"💙","🍎":"💚","🌾":"🚜","🏗️":"💪","🏆":"⚽","🎣":"⚓","🛒":"✅","👩‍🏫":"📚","👨‍👧‍👦":"💙","🕊️":"🤍","🛍️":"💚","😄":"💚","☕":"😊","😊":"🦷","🌸":"🌼","📜":"✊","🐶":"🐱","🤝":"💚"};
 function doisEmojis(texto, emCta){
   const b = String(texto || "").split("\n\n");
   if (b.length < 4) return texto;
@@ -974,6 +976,7 @@ function doisEmojis(texto, emCta){
 function gerarLegenda(titulo, formato, info){
   const base = gerarLegendaBase(titulo, formato, info);
   if (!base) return base;
+  if (base.split("\n\n").length >= 4) return doisEmojis(base);   // legenda já escrita em blocos (título, parágrafos, hashtags): só ajusta os emojis
   const k = base.lastIndexOf("\n\n#");
   const corpo = (k >= 0 ? base.slice(0, k) : base).trim(), tags = k >= 0 ? base.slice(k + 2).trim() : "";
   const linhas = corpo.split("\n");
