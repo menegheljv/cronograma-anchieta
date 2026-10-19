@@ -958,13 +958,17 @@ const montarLegenda = (...blocos) => blocos.filter(Boolean).join("\n\n");
 // Só dois emojis por legenda: um no título e um no fim da chamada para ação (o último parágrafo). O resto do texto e as hashtags ficam sem emoji.
 const EMOJI_RE = /(?:\p{Regional_Indicator}{2}|\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})?)*)/gu;
 const semEmoji = t => t.replace(EMOJI_RE, "").replace(/\uFE0F/g, "").replace(/[ 	]{2,}/g, " ").replace(/\s+([.!?,;:])/g, "$1").trim();
-function doisEmojis(texto){
+// Par do emoji do título: o do fim da chamada nunca repete o do título, mas combina com o tema.
+const PAR_EMOJI = {"💗":"🎀","💙":"💪","💛":"🌻","💜":"🦋","🧡":"🤝","❤️":"🩸","🤍":"🕊️","💚":"🌿","🇧🇷":"💚","👏":"💚","📚":"✏️","🎄":"✨","🎆":"🥂","🐰":"🍫","🎭":"🎉","💐":"💚","🎈":"🧸","💕":"🌅","🎉":"💚","🙏":"✝️","✝️":"🙏","🔥":"🎶","⚽":"🇧🇷","🚌":"🤝","♻️":"🌎","🎶":"🎉","👁️":"👓","📅":"💚","🎞️":"💬","🌊":"☀️","🦐":"🎶","🏃":"💪","📸":"💚","📢":"💚","💧":"🌎","🌳":"🌎","🌎":"💚","🌴":"☀️","⚖️":"🤝","♿":"💙","🍎":"💚","🌾":"🚜","🏗️":"💪","🎣":"⚓","🛒":"✅","👩‍🏫":"📚","👨‍👧‍👦":"💙","🕊️":"🤍","🛍️":"💚","😄":"💚","☕":"😊","😊":"🦷","🌸":"🌼","📜":"✊","🐶":"🐱","🤝":"💚"};
+function doisEmojis(texto, emCta){
   const b = String(texto || "").split("\n\n");
   if (b.length < 4) return texto;
   const tags = b[b.length - 1], titulo = b[0], p2 = b[b.length - 2], meio = b.slice(1, -2);
-  const emTitulo = titulo.match(EMOJI_RE);
-  const t = semEmoji(titulo) + " " + (emTitulo ? emTitulo[0] : "💚");
-  const c = semEmoji(p2) + " " + (emTitulo ? emTitulo[0] : "💚");   // o emoji da chamada repete o do título, para os dois combinarem com o tema
+  const emTitulo = titulo.match(EMOJI_RE) || [];
+  const a = emTitulo[0] || "💚";
+  const par = [emCta, [...emTitulo].reverse().find(e => e !== a), PAR_EMOJI[a], "💚", "✨"].find(e => e && e !== a);   // nunca igual ao do título
+  const t = semEmoji(titulo) + " " + a;
+  const c = semEmoji(p2) + " " + par;
   return [t, ...meio.map(semEmoji), c, tags].join("\n\n");
 }
 function gerarLegenda(titulo, formato, info){
@@ -1006,13 +1010,14 @@ function variarLegenda(base, n){
   const fr2 = frasesDe(blocos.slice(2).join(" "));
   const miolo = fr2.length && CTA_RE.test(fr2[fr2.length - 1]) ? fr2.slice(0, -1).join(" ") : fr2.join(" ");   // 2º parágrafo sem a chamada atual
   const tom = tomLegenda(base), cta = CHAMADAS[tom][(n - 1) % CHAMADAS[tom].length];
+  const emBase = (blocos.slice(2).join(" ").match(EMOJI_RE) || []).pop();   // emoji da chamada da legenda base: as variações mantêm o mesmo par
   const ht = tags.split(/\s+/).filter(Boolean);
   if (!ht.length) ht.push("#Anchieta", "#PrefeituraDeAnchieta");   // toda legenda leva hashtag
   const p2 = [miolo, cta].filter(Boolean).join(" ");
-  if (n === 1) return doisEmojis(montarLegenda(titulo, p1, p2, ht.join(" ")));
-  if (n === 2) return doisEmojis(montarLegenda(titulo, p1, cta, ht.slice(0, 2).join(" ")));
-  if (n === 3) return doisEmojis(montarLegenda(titulo, p1, p2, [...ht].sort().join(" ")));
-  return doisEmojis(montarLegenda(titulo, p1, p2, [...ht].reverse().join(" ")));
+  if (n === 1) return doisEmojis(montarLegenda(titulo, p1, p2, ht.join(" ")), emBase);
+  if (n === 2) return doisEmojis(montarLegenda(titulo, p1, cta, ht.slice(0, 2).join(" ")), emBase);
+  if (n === 3) return doisEmojis(montarLegenda(titulo, p1, p2, [...ht].sort().join(" ")), emBase);
+  return doisEmojis(montarLegenda(titulo, p1, p2, [...ht].reverse().join(" ")), emBase);
 }
 const HORARIOS_PRONTOS = ["08:00", "12:00", "16:00"];
 // ---------- Arrobas prontos (para o campo Colab) ----------
