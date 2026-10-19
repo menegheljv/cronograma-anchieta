@@ -914,7 +914,7 @@ function gerarLegendaBase(titulo, formato, info){
   // ----- meio ambiente e animais -----
   if (tem(/arvore|meio ambiente|agua|oceano|amazonia|animais|cachorro/)) {
     if (tem(/animais|cachorro/)) return "Hoje é Dia dos Animais! 🐶🐱\nAnimais são seres que sentem e merecem respeito, cuidado e um lar. Pense em adotar, nunca abandone e denuncie maus-tratos. Adote com amor!" + fecha("#AdoteUmAmigo");
-    return t + " 🌳\nCuidar do meio ambiente é tarefa de todos nós: economize água, descarte o lixo corretamente e valorize a natureza que faz parte de Anchieta. Pequenas atitudes fazem grande diferença!" + fecha(tag);
+    return t + " " + (tem(/arvore/) ? "🌳" : tem(/agua/) ? "💧" : tem(/oceano/) ? "🌊" : tem(/amazonia/) ? "🌿" : "🌎") + "\nCuidar do meio ambiente é tarefa de todos nós: economize água, descarte o lixo corretamente e valorize a natureza que faz parte de Anchieta. Pequenas atitudes fazem grande diferença!" + fecha(tag);
   }
 
   // ----- homenagens a profissionais e grupos -----
@@ -938,7 +938,7 @@ function gerarLegendaBase(titulo, formato, info){
   if (tem(/turismo/)) return "Hoje é Dia Mundial do Turismo! 🌴\nAnchieta é história, natureza e gente acolhedora. Venha conhecer o nosso litoral! 📍 Anchieta – ES" + fecha("#TurismoAnchieta");
 
   // ----- eventos locais -----
-  if (tem(/festival|evento|feira|mostra|caminhada|corrida|programacao/)) return t + "! 🦐🎶\n" + (util ? util + ". " : "") + "Venha participar e viver essa experiência em Anchieta. Esperamos você! 📍 Anchieta – ES" + fecha(tag);
+  if (tem(/festival|evento|feira|mostra|caminhada|corrida|programacao/)) return t + "! " + (tem(/frutos do mar|camarao|moqueca|peixe/) ? "🦐" : tem(/corrida|caminhada/) ? "🏃" : tem(/feira/) ? "🛍️" : tem(/mostra/) ? "🎭" : "🎶") + "\n" + (util ? util + ". " : "") + "Venha participar e viver essa experiência em Anchieta. Esperamos você! 📍 Anchieta – ES" + fecha(tag);
 
   // ----- demais datas (tom neutro) -----
   if (/^dia (do|da|de|dos|das|mundial|nacional|internacional)/.test(tl)) return t + " 💚\n" + (util ? util + ". " : "") + "A Prefeitura de Anchieta se une a essa data. Compartilhe esta mensagem!" + fecha(tag);
@@ -962,9 +962,9 @@ function doisEmojis(texto){
   const b = String(texto || "").split("\n\n");
   if (b.length < 4) return texto;
   const tags = b[b.length - 1], titulo = b[0], p2 = b[b.length - 2], meio = b.slice(1, -2);
-  const emTitulo = titulo.match(EMOJI_RE), emCta = p2.match(EMOJI_RE);
+  const emTitulo = titulo.match(EMOJI_RE);
   const t = semEmoji(titulo) + " " + (emTitulo ? emTitulo[0] : "💚");
-  const c = semEmoji(p2) + " " + (emCta ? emCta[emCta.length - 1] : "💚");
+  const c = semEmoji(p2) + " " + (emTitulo ? emTitulo[0] : "💚");   // o emoji da chamada repete o do título, para os dois combinarem com o tema
   return [t, ...meio.map(semEmoji), c, tags].join("\n\n");
 }
 function gerarLegenda(titulo, formato, info){
@@ -984,9 +984,9 @@ const semLegenda = f => f === "Stories";
 const ehCobertura = f => f === "Cobertura";   // Cobertura: sem legenda, horário e colab; com ✓ vai direto para Postadas
 // Variações da legenda: mesmo conteúdo, com outra chamada para ação (conforme o tom do texto).
 const CHAMADAS = {
-  festivo: ["Marque quem você quer homenagear! 💚", "Compartilhe esse carinho com a família e os amigos! 🤗", "Deixe a sua mensagem nos comentários! 💬", "Curta, comente e compartilhe! 📲"],
-  serio: ["Compartilhe esta informação: ela pode ajudar alguém. 🤝", "Salve este post e envie para quem precisa. 🔖", "Informação protege. Compartilhe! 📲", "Em caso de dúvida, procure a unidade de saúde ou o serviço indicado. 💚"],
-  neutro: ["Compartilhe com quem precisa saber! 📲", "Marque alguém que precisa ver isso! 👇", "Conta pra gente o que você acha nos comentários! 💬", "Salve este post para consultar depois. 🔖"]
+  festivo: ["Marque quem você quer homenagear!", "Compartilhe esse carinho com a família e os amigos!", "Deixe a sua mensagem nos comentários!", "Curta, comente e compartilhe!"],
+  serio: ["Compartilhe esta informação: ela pode ajudar alguém.", "Salve este post e envie para quem precisa.", "Informação protege. Compartilhe!", "Em caso de dúvida, procure a unidade de saúde ou o serviço indicado."],
+  neutro: ["Compartilhe com quem precisa saber!", "Marque alguém que precisa ver isso!", "Conta pra gente o que você acha nos comentários!", "Salve este post para consultar depois."]
 };
 const ABERTURAS = {
   festivo: ["", "Um recado especial da Prefeitura de Anchieta 💚", "Com carinho, de Anchieta para você 💛", "Hoje o dia é de celebrar! ✨", "Olha só que data especial! 👀"],
