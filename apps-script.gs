@@ -57,7 +57,7 @@ function ehAdmin_(c) {
   const norm = t => String(t === null || t === undefined ? '' : t).trim().toLowerCase();
   return c.pessoa === 'Admin' && !!s && norm(s) !== '' && norm(c.senha) === norm(s);
 }
-const EQUIPE = ['João', 'Renata', 'Isabela', 'Marcos', 'Wandinho', 'Mariana', 'Flávio'];
+const EQUIPE = ['João', 'Renata', 'Isabela', 'Marcos', 'Wandinho', 'Mariana', 'Flávio', 'Augusto'];
 function ehPessoa_(c) { // a equipe entra só com o nome
   return EQUIPE.indexOf(c.pessoa) >= 0;
 }
