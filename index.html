@@ -1095,49 +1095,16 @@ async function salvarArrobas(lista, atualizarTela = true){
   await post({acao:"alterar", chave:"cfg:arrobas", obs:lista.map(x => x.r + "=" + x.a).join(";") || " "});
   if (atualizarTela) await carregarEstado();
 }
-const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!(x.legenda && x.horario && x.colab);
+const dadosPreenchidos = x => semLegenda(x.formato) ? !!x.horario : !!x.colab;   // ao dar o check só o colab é pedido
 // só entra o que ainda não foi postado: pauta de dia que já passou conta como postada, e a já programada sai da lista
 const hojeIso = () => now.getFullYear() + "-" + pad2(now.getMonth()+1) + "-" + pad2(now.getDate());
 const listaDados = () => listaProgramar().filter(x => !x.programada && x.data >= hojeIso() && !semLegenda(x.formato) && !ehCobertura(x.formato));   // Stories não passa por aqui: vai direto para Programar. Cobertura vai direto para Postadas
 const pendentesDados = () => listaDados().filter(x => !dadosPreenchidos(x));
-// Formulário de legenda, horário e colab. opc.marcar: só marca ✓ depois de salvar tudo; opc.aoSalvar/aoCancelar: o que fazer depois.
+// Formulário do colab. opc.marcar: só marca ✓ depois de salvar tudo; opc.aoSalvar/aoCancelar: o que fazer depois.
 function formDados(c, x, opc = {}){
   const ok = h("span","salvo");
-  const sugerida = gerarLegenda(x.titulo, x.formato, x.obs);
   const sem = semLegenda(x.formato);
-  const ta = h("textarea"); ta.maxLength = 2200; ta.value = sem ? "" : (x.legenda || sugerida); ta.placeholder = "Escreva a legenda do post"; ta.setAttribute("aria-label","Legenda");
-  const cont = h("div","cont", ta.value.length + "/2200");
-  if (sem){ c.appendChild(h("div","auto","Stories não leva legenda: preencha só o horário.")); }
-  else {
-    c.appendChild(h("span","rot","Legenda"));
-    if (!x.legenda) c.appendChild(h("div","auto","Sugestão automática: revise, edite se quiser e salve."));
-    c.appendChild(ta); c.appendChild(cont);
-    // várias opções de legenda: é só clicar para usar
-    c.appendChild(h("span","rot","Outras opções de legenda (clique para usar)"));
-    const ops = h("div","opcoes");
-    [0,1,2,3,4].forEach(n => {
-      const txt = variarLegenda(sugerida, n);
-      const o = h("button","opcao"); o.type = "button";
-      o.appendChild(h("b",null,n ? "Opção " + (n + 1) : "Opção 1 (original)"));
-      o.appendChild(h("span",null,txt.split("\n\n#")[0]));
-      o.addEventListener("click", () => {
-        ta.value = txt; legSujo = true; ok.textContent = "Opção " + (n + 1) + " escolhida. Salve para guardar."; cont.textContent = ta.value.length + "/2200";
-        ops.querySelectorAll(".opcao").forEach(z => z.setAttribute("aria-pressed", String(z === o)));
-      });
-      ops.appendChild(o);
-    });
-    c.appendChild(ops);
-  }
   const g = h("div","campos");
-  const w1 = h("div"); w1.appendChild(h("span","rot","Horário da postagem"));
-  const hr = h("input"); hr.type = "time"; hr.value = /^\d{2}:\d{2}$/.test(x.horario) ? x.horario : ""; w1.appendChild(hr);
-  const hs = h("div","arrobas-chips");
-  HORARIOS_PRONTOS.forEach(t => {
-    const b = h("button","arr",t); b.type = "button";
-    b.addEventListener("click", () => { hr.value = t; legSujo = true; ok.textContent = ""; });
-    hs.appendChild(b);
-  });
-  w1.appendChild(hs);
   const w2 = h("div"); w2.appendChild(h("span","rot","Colab (perfil que divide o post)"));
   const co = h("input"); co.type = "text"; co.maxLength = 100; co.value = x.colab; co.placeholder = "@perfil"; co.autocomplete = "off"; co.autocapitalize = "off"; w2.appendChild(co);
   const chips = h("div","arrobas-chips");
@@ -1175,7 +1142,7 @@ function formDados(c, x, opc = {}){
     });
     w2.appendChild(chips); w2.appendChild(form);
   } else w2.appendChild(chips);
-  g.appendChild(w1); if (!sem) g.appendChild(w2); c.appendChild(g);
+  if (!sem) g.appendChild(w2); c.appendChild(g);
   const bt = h("div","botoes"); const sv = h("button","btn pri", dadosPreenchidos(x) ? "Salvar alterações" : (opc.marcar ? "Salvar e marcar como feita" : "Salvar")); sv.type = "button";
   bt.appendChild(sv);
   if (dadosPreenchidos(x) || opc.aoCancelar){
@@ -1184,23 +1151,21 @@ function formDados(c, x, opc = {}){
     bt.appendChild(cn);
   }
   bt.appendChild(ok); c.appendChild(bt);
-  const sujo = () => { legSujo = true; ok.textContent = ""; cont.textContent = ta.value.length + "/2200"; };
-  [ta, hr, co].forEach(e => e.addEventListener("input", sujo));
+  const sujo = () => { legSujo = true; ok.textContent = ""; };
+  co.addEventListener("input", sujo);
   // só deixa salvar com tudo preenchido
-  const completo = () => (sem || ta.value.trim()) && hr.value && (sem || co.value.trim());
-  const valida = () => { sv.disabled = !completo(); if (sv.disabled && !ok.textContent.startsWith("Salvando")) ok.textContent = sem ? "" : "Preencha legenda, horário e colab para salvar."; else if (!sv.disabled && ok.textContent.startsWith("Preencha")) ok.textContent = ""; };
+  const completo = () => sem || co.value.trim();
+  const valida = () => { sv.disabled = !completo(); if (sv.disabled && !ok.textContent.startsWith("Salvando")) ok.textContent = sem ? "" : "Escolha o colab para salvar."; else if (!sv.disabled && ok.textContent.startsWith("Preencha")) ok.textContent = ""; };
   ["input","click"].forEach(ev => c.addEventListener(ev, () => setTimeout(valida, 0)));
   valida();
   sv.addEventListener("click", async () => {
-    if (!sem && !ta.value.trim()){ ok.textContent = "Escolha ou escreva a legenda."; ta.focus(); return; }
-    if (!hr.value){ ok.textContent = "Escolha o horário."; hr.focus(); return; }
     if (!sem && !co.value.trim()){ ok.textContent = "Escolha o colab ou clique em Sem colab."; co.focus(); return; }
     sv.disabled = true; ok.textContent = "Salvando...";
-    const leg = sem ? "" : ta.value.trim(), colabV = sem ? "" : co.value.trim(), pessoa = ADMIN ? "Admin" : USER;
-    const cmd = {acao: opc.marcar ? "concluir" : "detalhar", chave:x.id, responsavel:x.owner, legenda:leg || " ", horario:hr.value, colab:colabV || " "};
+    const leg = x.legenda || "", colabV = sem ? "" : co.value.trim(), pessoa = ADMIN ? "Admin" : USER;
+    const cmd = {acao: opc.marcar ? "concluir" : "detalhar", chave:x.id, responsavel:x.owner, legenda:leg || " ", horario:x.horario || " ", colab:colabV || " "};
     editandoLeg.delete(x.id); legSujo = false;
     // aparece na hora; o envio ao servidor segue em segundo plano
-    gravar(cmd, Object.assign({legenda:leg, horario:hr.value, colab:colabV}, opc.marcar ? {feito:true, feitoPor:pessoa} : {}))
+    gravar(cmd, Object.assign({legenda:leg, horario:x.horario || "", colab:colabV}, opc.marcar ? {feito:true, feitoPor:pessoa} : {}))
       .catch(err => alert(msgErro(err)));
     if (opc.aoSalvar) opc.aoSalvar();
   });
@@ -1388,7 +1353,7 @@ async function alternarFeito(it){
   if (!it[6]){
     const x = {id:it[4], data:isoDia(it[0]), titulo:it[1], owner:it[2], obs:it[3], formato:it[7], legenda:it[10] || "", horario:it[11] || "", colab:it[12] || ""};
     if (!semLegenda(x.formato) && !ehCobertura(x.formato) && !dadosPreenchidos(x)){
-      // sem legenda, horário e colab escolhidos a pessoa não pode dar o check
+      // sem o colab escolhido a pessoa não pode dar o check
       // leva a pessoa para Dados de postagem, onde ela escolhe tudo e só então o ✓ é dado
       pedidoCheck = x; legSujo = true;
       const dlg = document.getElementById("dlgDia"); if (dlg.open) dlg.close();
